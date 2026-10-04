@@ -2,6 +2,8 @@
 
 A live Swift application in one file, powered by ESW Live and Roost (the renamed Peregrine framework). Save it, let Swift compile, and see the new version in your browser.
 
+**v0.1.0-alpha.1 is a development preview.** It requires the sibling ESW Live, Roost, and Nexus development checkouts described below. At release time, the required ESW Live changes are not yet published; the public ESW checkout alone cannot build this preview.
+
 ```sh
 ./playground Examples/Counter.swift
 ```
