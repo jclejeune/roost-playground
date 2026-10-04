@@ -4,16 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Roost Playground</title>
+  <link rel="icon" href="/roost.png">
+  <link rel="stylesheet" href="/roost.css">
   <link rel="stylesheet" href="/playground.css">
   <script type="module" src="/playground.js"></script>
 </head>
 <body>
-  <header>
-    <div class="identity"><span class="mark" aria-hidden="true">↗</span><strong>Roost</strong><span class="divider">/</span><span>Playground</span></div>
+  <a class="skip-link" href="#workspace">Skip to preview</a>
+  <header class="site-header">
+    <div class="identity"><a class="brand" href="/" aria-label="Roost Playground home"><img src="/roost.png" width="38" height="38" alt=""><span>roost<span class="brand-dot">.</span></span></a><span class="divider">/</span><span class="product-name">Playground</span></div>
     <div class="build-status" role="status" aria-live="polite"><span id="dot" data-phase="building"></span><span id="status">Connecting…</span></div>
   </header>
   <div class="file-bar"><code id="filename">Your Swift file</code><span id="generation">Save to rebuild</span></div>
-  <main>
+  <main id="workspace" tabindex="-1">
     <section id="diagnostic-panel" hidden aria-label="Build diagnostics">
       <div class="error-heading"><h1 id="error-title">Build needs attention</h1><span id="preview-note"></span></div>
       <pre id="diagnostics" tabindex="0"></pre>
@@ -22,6 +25,6 @@
     <div id="empty"><span class="loading-line" aria-hidden="true"></span><h1>One file. A live Swift app.</h1><p id="empty-message">Preparing your preview. The first build also compiles its dependencies.</p></div>
     <iframe id="preview" title="Live Swift preview" hidden></iframe>
   </main>
-  <footer><span>Swift on the server. Alive in the browser.</span><span>Save → build → preview · Reloads reset state</span></footer>
+  <footer class="site-footer"><span>Swift on the server. Alive in the browser.</span><span>Save → build → preview · Reloads reset state</span></footer>
 </body>
 </html>

@@ -1,0 +1,82 @@
+/* Visual foundation from Roost's examples/Roost/Public/css/app.css. */
+:root {
+    color-scheme: light;
+    --paper: #f0f4fa;
+    --surface: #ffffff;
+    --ink: #21314a;
+    --muted: #5d6c82;
+    --blue: #2855b6;
+    --line: #d6dfec;
+    --accent: #de5033;
+    --error: #ad2d32;
+    --heading-font: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+    --mono-font: "SFMono-Regular", Consolas, monospace;
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+a { color: var(--blue); text-underline-offset: .22em; }
+a:hover { text-decoration-thickness: 2px; }
+button, input, textarea, select { font: inherit; }
+button, .button {
+    display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+    border: 1px solid transparent; border-radius: 7px;
+    background: var(--blue); color: white; font-weight: 650;
+    padding: .7rem 1.1rem; cursor: pointer; text-decoration: none; min-height: 44px;
+}
+button:hover, .button:hover { background: #1d4294; }
+input:not([type="checkbox"], [type="radio"], [type="hidden"]), textarea, select {
+    display: block; width: 100%; min-width: 0; background: var(--surface); color: var(--ink);
+    border: 1px solid #aab8cc; border-radius: 6px; padding: .75rem .9rem; margin: .35rem 0 1.3rem;
+}
+input::placeholder, textarea::placeholder { color: #758298; }
+input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--error); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--blue); }
+textarea { resize: vertical; min-height: 120px; }
+label { display: block; font-size: .9rem; font-weight: 650; }
+small { display: block; color: var(--muted); }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; }
+h1, h2, .brand { font-family: var(--heading-font); }
+h1 { font-size: clamp(2.35rem, 5vw, 3.5rem); letter-spacing: -.055em; line-height: 1.13; font-weight: 650; margin: .5rem 0 1rem; }
+h2 { line-height: 1.3; letter-spacing: -.03em; }
+p { margin: 0 0 1rem; }
+.accent, .brand-dot { color: var(--accent); }
+.muted { color: var(--muted); }
+.eyebrow { color: var(--muted); font: 500 .72rem/1.6 var(--mono-font); letter-spacing: .1em; text-transform: uppercase; margin-bottom: .7rem; }
+.lede { color: var(--muted); font-size: 1.04rem; margin: 0; }
+
+.site-header, .site-footer {
+    width: min(1120px, calc(100% - 80px)); margin-inline: auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+}
+.site-header { min-height: 112px; border-bottom: 1px solid var(--line); }
+.brand { display: inline-flex; align-items: center; gap: .7rem; font-weight: 750; font-size: 2rem; letter-spacing: -.07em; color: var(--ink); text-decoration: none; }
+.brand img { object-fit: contain; }
+.site-footer { padding: 26px 0; border-top: 1px solid var(--line); font-size: .75rem; color: var(--muted); }
+.site-footer a { color: inherit; }
+.skip-link { position: absolute; top: -60px; left: 12px; padding: 8px 16px; background: var(--surface); z-index: 1; }
+.skip-link:focus { top: 12px; }
+
+/* Default layout for single-file views and the HEEx example. */
+[data-esw-live] main { width: min(1000px, calc(100% - 80px)); margin: 64px auto 90px; }
+[data-esw-live] h2 { font-size: 1.35rem; font-weight: 600; margin: 0 0 1.25rem; }
+[data-esw-live] section { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 28px; }
+.counter { display: flex; align-items: center; gap: 28px; }
+.counter button { min-width: 48px; }
+output { font: 600 3rem/1.3 var(--heading-font); font-variant-numeric: tabular-nums; min-width: 70px; text-align: center; }
+.form-row { display: flex; align-items: stretch; gap: 12px; margin: .5rem 0 1.3rem; }
+.form-row input:not([type="checkbox"], [type="radio"], [type="hidden"]) { flex: 1; width: auto; margin: 0; }
+[data-esw-state="disconnected"], [data-esw-state="expired"] { opacity: .65; }
+
+@media (max-width: 760px) {
+    .site-header, .site-footer, [data-esw-live] main { width: calc(100% - 40px); }
+    .site-header { min-height: 88px; }
+    [data-esw-live] main { margin-top: 40px; margin-bottom: 60px; }
+    .site-footer { align-items: flex-start; flex-direction: column; gap: 8px; }
+}
+@media (max-width: 500px) {
+    .form-row { flex-direction: column; }
+}

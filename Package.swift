@@ -16,13 +16,15 @@ let package = Package(
     ],
     targets: [
         .target(name: "RoostPlayground", dependencies: [
+            "PlaygroundTheme",
             .product(name: "ESWLive", package: "esw"),
             .product(name: "Roost", package: "peregrine"),
             .product(name: "Nexus", package: "nexus"),
         ]),
+        .target(name: "PlaygroundTheme", resources: [.copy("Resources")]),
         .target(name: "PlaygroundCore"),
         .executableTarget(name: "PlaygroundCLI", dependencies: [
-            "PlaygroundCore", .product(name: "Hummingbird", package: "hummingbird"),
+            "PlaygroundCore", "PlaygroundTheme", .product(name: "Hummingbird", package: "hummingbird"),
         ], resources: [.copy("Resources")]),
         .testTarget(name: "PlaygroundCoreTests", dependencies: ["PlaygroundCore"]),
         .testTarget(name: "RoostPlaygroundTests", dependencies: [

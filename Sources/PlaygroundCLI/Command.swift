@@ -1,6 +1,7 @@
 import Foundation
 import Hummingbird
 import PlaygroundCore
+import PlaygroundTheme
 
 @main
 struct Command {
@@ -34,17 +35,23 @@ struct Command {
                                               cacheRoot: environment["ROOST_PLAYGROUND_CACHE"].map { URL(filePath: $0) })
         let supervisor = try Supervisor(configuration: configuration)
         let router = Router()
+        var assets = [
+            (path: "/roost.css", type: "text/css; charset=utf-8", body: Data(PlaygroundTheme.stylesheet.utf8)),
+            (path: "/roost.png", type: "image/png", body: PlaygroundTheme.logo),
+        ]
         for (path, name, type) in [("/", "index.html", "text/html; charset=utf-8"),
                                     ("/playground.js", "playground.js", "text/javascript; charset=utf-8"),
                                     ("/playground.css", "playground.css", "text/css; charset=utf-8")] {
             guard let file = Bundle.module.url(forResource: name, withExtension: nil, subdirectory: "Resources") else {
                 throw PlaygroundError("Missing playground resource: \(name)")
             }
-            let body = try String(contentsOf: file, encoding: .utf8)
-            router.get(RouterPath(path)) { request, _ in
+            assets.append((path: path, type: type, body: try Data(contentsOf: file)))
+        }
+        for asset in assets {
+            router.get(RouterPath(asset.path)) { request, _ in
                 try checkHost(request, port: configuration.port)
-                return Response(status: .ok, headers: [.contentType: type, .cacheControl: "no-store"],
-                                body: .init(byteBuffer: .init(string: body)))
+                return Response(status: .ok, headers: [.contentType: asset.type, .cacheControl: "no-store"],
+                                body: .init(byteBuffer: .init(bytes: asset.body)))
             }
         }
         router.get("/__playground/status") { request, _ in

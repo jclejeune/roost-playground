@@ -38,6 +38,17 @@ The example and README now guard `render` with `swiftformat:disable:next unusedA
 
 Final verification passed all **14 Swift tests** and **12 browser acceptance checkpoints**. The new macro-error capture was visually inspected: the error and source context appear first while the previous counter remains interactive. Existing runner processes need one restart to load the diagnostic parser change.
 
+## Roost demo styling, 2026-10-04
+
+The shell and default previews now share a bundled stylesheet adapted from the Roost reading-queue demo. The logo is a byte-for-byte copy of the demo asset. No external fonts or image requests are needed.
+
+- All 14 Swift tests and 12 browser acceptance checkpoints passed with the shared theme bundle, including replacement workers and the file-based HEEx example.
+- A live comparison with the demo at `127.0.0.1:4000` confirmed matching values for all eight color tokens and the heading font in both the shell and preview.
+- Fresh browser views at 1280, 390, and 320 pixels were captured and visually reviewed; the logo, controls, form layout, and footer fit without horizontal overflow. Counter and form events, keyboard focus, local asset content types, and invalid-field border styling were checked.
+- Reviewed captures are in `BrowserTests/artifacts/roost-theme-1280.png`, `roost-theme-390.png`, `roost-theme-320.png`, and `macro-error.png`; the reference is `roost-demo-reference.png`.
+
+SwiftPM also synchronized the lockfile with the neighboring Roost manifest's existing Spectro 2.0.0 requirement. The SwiftSyntax revision is unchanged; its resolved repository URL follows the updated dependency graph.
+
 ## Limits
 
 This is a local macOS first version with sibling-checkout dependencies. It watches the selected Swift file and template directory; edits to dependency repositories or additional Swift files are outside the watch set. There is no browser editor, arbitrary package dependency UI, state migration, Linux validation, or remote execution service. The first cold build includes the framework dependency graph; later edits compile incrementally.

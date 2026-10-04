@@ -68,6 +68,15 @@ The launcher generates the example's Swift package for you. Its first run resolv
 
 Use `--port` for another browser-shell port and `--no-open` to print the address without opening a browser. Paths containing spaces or quotes are supported. **Ctrl-C** stops the runner, compiler subprocesses, and preview servers. A second runner for the same input is rejected; different inputs can use different shell ports.
 
+## Appearance
+
+The playground uses the Roost reading-queue demo's palette, Avenir headings, blue controls, and orange bird mark. The assets are bundled locally.
+
+- [Shared Roost theme](Sources/PlaygroundTheme/Resources/roost.css): colors, typography, controls, and the default preview layout. Both the browser shell and standalone previews use this stylesheet.
+- [Playground shell styles](Sources/PlaygroundCLI/Resources/playground.css): file bar, build status, and diagnostics.
+
+The theme is adapted from Roost's `examples/Roost/Public/css/app.css`, with its original `images/roost.png` logo. Restart the launcher after editing bundled theme assets.
+
 ## Reload behavior
 
 - The input Swift file and its `Views/` directory are watched by content, with a short debounce for saves.

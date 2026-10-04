@@ -30,9 +30,9 @@ struct Counter: LivePlayground {
     func render(_ state: State) -> ESWLiveRender {
         #live("""
         <main>
-          <p class="muted">ONE FILE. A LIVE SWIFT APP.</p>
+          <p class="eyebrow">ONE FILE. A LIVE SWIFT APP.</p>
           <h1>A little Swift, live.</h1>
-          <p class="muted">Edit this file and save. Your next idea is a rebuild away.</p>
+          <p class="lede">Edit this file and save. Your next idea is a rebuild away.</p>
           <section aria-label="Counter">
             <h2>State lives on the server.</h2>
             <div class="counter">
