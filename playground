@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+checkout_id="$(printf '%s' "$project_root" | shasum -a 256 | cut -c 1-16)"
+export ROOST_PLAYGROUND_ROOT="$project_root"
+export ROOST_PLAYGROUND_CACHE="${ROOST_PLAYGROUND_CACHE:-$HOME/Library/Caches/roost-playground/$checkout_id}"
+exec swift run --package-path "$project_root" --scratch-path "$ROOST_PLAYGROUND_CACHE/runner" roost-playground "$@"

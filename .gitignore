@@ -3,4 +3,5 @@
 .DS_Store
 BrowserTests/node_modules/
 BrowserTests/artifacts/
-
+BrowserTests/.fixtures/
+.superpowers/
