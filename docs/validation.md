@@ -12,13 +12,14 @@ The runtime tests also exercise its private Roost adapter: session ownership, cr
 
 - Counter and form events, isolated session cookies, Host rejection, narrow-screen layout, duplicate-runner rejection.
 - Compilation failure with the original quoted source path and continued interaction with the previous preview.
+- Macro-expansion errors appear before dependency warnings and contain readable text without terminal escape codes.
 - Atomic saves, successful reload with fresh state, stable parent page, and retirement of the old worker.
 - Edits during compilation, failed candidate startup, deleted/recreated sources, and recovery after a worker crash.
 - SIGINT, workspace-lock release, restarting in the same browser tab, and an initially invalid file.
 - File-based HEEx rendering, template-only changes, template diagnostics, deletion/recreation, and SIGTERM cleanup.
 - An A → B → A undo after an obsolete compilation completes, without another save to unstick the watcher.
 
-The acceptance suite writes ready, mobile, and compiler-error screenshots to `BrowserTests/artifacts/`.
+The acceptance suite writes ready, mobile, compiler-error, and macro-error screenshots to `BrowserTests/artifacts/`.
 
 ## Verified on 2026-10-04
 
@@ -28,6 +29,14 @@ The acceptance suite writes ready, mobile, and compiler-error screenshots to `Br
 - A separate read-only review found an A → B → A undo that could strand the watcher on a discarded compilation. The browser regression reproduced the failure before the fix and passed afterward, including in the final complete suite.
 - The documented `./playground Examples/Counter.swift --no-open` launcher passed with a relative input after the rename. Its staged executable and all 9 resource bundles passed `codesign --verify --strict` under `~/Library/Caches/roost-playground/`; Ctrl-C exited cleanly and closed the preview listener. An occupied-port smoke check also passed before the final branding rename.
 - Shell and JavaScript syntax checks and staged whitespace checks passed. No neighboring repository was edited for this project.
+
+## Rebuild diagnostics regression, 2026-10-04
+
+A save-time SwiftFormat rewrite removed the `state` binding because its uses occur inside the `#live` template string. The resulting colored Swift macro diagnostics bypassed the location parser, leaving dependency warnings at the top of the error panel. A regression using the captured diagnostic format failed before the fix. Terminal escape sequences are now removed before parsing, including for tool failures with no source location. Replaying the original build log then displayed the actual missing-variable error first.
+
+The example and README now guard `render` with `swiftformat:disable:next unusedArguments`. SwiftFormat was run against a copy of the example and preserved the binding. The user's existing preview rebuilt successfully after restoring it.
+
+Final verification passed all **14 Swift tests** and **12 browser acceptance checkpoints**. The new macro-error capture was visually inspected: the error and source context appear first while the previous counter remains interactive. Existing runner processes need one restart to load the diagnostic parser change.
 
 ## Limits
 

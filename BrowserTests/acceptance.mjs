@@ -133,6 +133,23 @@ try {
     await page.screenshot({ path: join(artifacts, 'compiler-error.png'), fullPage: true });
     console.log('PASS: compiler error retains the live preview, original filename, and state');
 
+    // An unused-argument formatter can remove a binding used only inside the template string.
+    const brokenMacro = original.replace('func render(_ state: State)', 'func render(_: State)');
+    assert.notEqual(brokenMacro, original);
+    await save(brokenMacro);
+    const macroFailure = await phase('failed');
+    assert.equal(macroFailure.previewURL, ready.previewURL);
+    assert(macroFailure.diagnostics.startsWith('macro expansion #live:'));
+    assert(macroFailure.diagnostics.includes("cannot find 'state' in scope"));
+    assert(macroFailure.diagnostics.includes(source));
+    assert(!macroFailure.diagnostics.includes('Conflicting identity'));
+    assert(!macroFailure.diagnostics.includes('\x1b'));
+    await poll(async () => (await page.locator('#diagnostics').textContent()).includes("cannot find 'state' in scope"), 'macro error shown');
+    await frame.getByRole('button', { name: 'Increase', exact: true }).click();
+    await count(4);
+    await page.screenshot({ path: join(artifacts, 'macro-error.png'), fullPage: true });
+    console.log('PASS: macro errors appear before dependency warnings while the previous preview remains live');
+
     const saved = original.replaceAll('A little Swift, live.', 'Saved and live.');
     await save(saved);
     current = await readyAfter(1);

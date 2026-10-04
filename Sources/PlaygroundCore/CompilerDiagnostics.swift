@@ -3,7 +3,11 @@ import Foundation
 enum CompilerDiagnostics {
     /// Present source diagnostics first; the complete build transcript remains in its log file.
     static func summarize(_ output: String) -> String {
-        let lines = output.components(separatedBy: .newlines)
+        // Swift can emit terminal styling even when redirected to a file. Strip it before
+        // matching locations so a colored "error:" cannot fall back to dependency warnings.
+        let plain = output.replacingOccurrences(of: #"\x1B\[[0-?]*[ -/]*[@-~]"#,
+                                                with: "", options: .regularExpression)
+        let lines = plain.components(separatedBy: .newlines)
         var sections: [String] = []
         var current: [String] = []
         var hasSourceError = false
@@ -24,6 +28,6 @@ enum CompilerDiagnostics {
             }
         }
         finish()
-        return hasSourceError ? sections.joined(separator: "\n\n") : output
+        return hasSourceError ? sections.joined(separator: "\n\n") : plain
     }
 }

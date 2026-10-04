@@ -25,6 +25,8 @@ struct Counter: LivePlayground {
         return state
     }
 
+    // The template uses state inside a string; formatters cannot see those references.
+    // swiftformat:disable:next unusedArguments
     func render(_ state: State) -> ESWLiveRender {
         #live("""
         <main>

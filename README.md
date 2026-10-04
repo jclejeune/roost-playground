@@ -22,6 +22,7 @@ struct Counter: LivePlayground {
         return state + 1
     }
 
+    // swiftformat:disable:next unusedArguments
     func render(_ count: Int) -> ESWLiveRender {
         #live("""
         <main>
@@ -35,6 +36,8 @@ struct Counter: LivePlayground {
 ```
 
 `LivePlayground` is an ordinary ESW `LiveView` with `init()` and an application entry point. It supplies the Roost server, session middleware, page layout, and ESW live client. Set `static let title` to change the page title. State and event handling remain Swift; rendering uses the same `#live` macro as a full application.
+
+SwiftFormat sees the template as a string and may remove parameters referenced only inside it. Keep the `unusedArguments` guard above `render` when using format-on-save.
 
 The fuller [counter example](Examples/Counter.swift) includes form submission. The [template example](Examples/Templated/Counter.swift) uses a separate `.live.heex` file:
 
