@@ -1,5 +1,5 @@
 {
-  "originHash" : "2349af4e8c80de3db775a3607d08d6889de33b08a9767300127b90b1915f9fac",
+  "originHash" : "af2b16b56d052e8d181464178e1eb698a4c850f4f6a5ff07a4c72624692dca02",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -141,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Spectro-ORM/Spectro.git",
       "state" : {
-        "revision" : "9e23a6fde43d429c93ad0cb2a96503b3dc3c1c3f",
-        "version" : "1.2.0"
+        "revision" : "b13c41cdda2e73fb2a7000399c7d8f450ab05f0e",
+        "version" : "2.0.0"
       }
     },
     {
@@ -355,7 +355,7 @@
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-syntax.git",
+      "location" : "https://github.com/apple/swift-syntax.git",
       "state" : {
         "revision" : "0687f71944021d616d34d922343dcef086855920",
         "version" : "600.0.1"
