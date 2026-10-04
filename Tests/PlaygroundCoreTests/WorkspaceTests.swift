@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import PlaygroundCore
 
-private struct Fixture {
+struct Fixture {
     let root: URL
     let source: URL
     let configuration: Configuration

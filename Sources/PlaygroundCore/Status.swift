@@ -8,6 +8,8 @@ public struct PlaygroundStatus: Codable, Sendable {
     public var previewURL: String?
     public var diagnostics = ""
     public var buildMilliseconds: Int?
+    public var buildHash: String?
+    public var cacheHit = false
     public var logPath: String?
 
     public init(filename: String) { self.filename = filename }

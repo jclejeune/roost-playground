@@ -6,6 +6,7 @@ public final class Supervisor {
     public private(set) var status: PlaygroundStatus
     private let configuration: Configuration
     private let workspace: Workspace
+    private let cache: BuildCache
     private var lease: WorkspaceLock?
     private var build: ManagedProcess?
     private var worker: Worker?
@@ -23,6 +24,7 @@ public final class Supervisor {
         self.configuration = configuration
         workspace = Workspace(configuration: configuration)
         lease = try workspace.acquire()
+        cache = try BuildCache(directory: workspace.root.appending(path: "versions"))
         status = PlaygroundStatus(filename: configuration.source.lastPathComponent)
     }
 
@@ -60,7 +62,11 @@ public final class Supervisor {
         if let build { await build.stop(); self.build = nil }
         if let candidate { await retire(candidate); self.candidate = nil }
         if let worker { await retire(worker); self.worker = nil }
-        lease = nil
+        if lease != nil {
+            do { try cache.clear() }
+            catch { print("Could not remove saved builds at \(cache.directory.path): \(error)") }
+            lease = nil
+        }
         status.phase = .stopped
     }
 
@@ -71,45 +77,34 @@ public final class Supervisor {
         status.phase = .building
         status.diagnostics = ""
         status.buildMilliseconds = nil
-        print("Building \(configuration.source.lastPathComponent)…")
+        status.cacheHit = false
+        var reusedHash: String?
         do {
             try workspace.prepare(snapshot: snapshot)
-            let arguments = ["build", "--package-path", workspace.root.path, "--scratch-path", workspace.scratch.path]
-            let log = workspace.logs.appending(path: "build.log")
-            status.logPath = log.path
-            let compiler = try ManagedProcess(executable: URL(filePath: "/usr/bin/env"),
-                                              arguments: ["swift"] + arguments + ["--product", "PlaygroundPage"],
-                                              directory: workspace.root, log: log)
-            build = compiler
-            let code = try await compiler.wait()
-            await compiler.stop()
-            build = nil
-            try Task.checkCancellation()
-            guard try isCurrent(snapshot) else { return .discarded }
-            guard code == 0 else {
-                let diagnostics = workspace.mapDiagnostics(compiler.diagnostics())
-                throw PlaygroundError(CompilerDiagnostics.summarize(diagnostics))
-            }
-
-            if binaryDirectory == nil {
-                let pathProcess = try ManagedProcess(executable: URL(filePath: "/usr/bin/env"),
-                                                     arguments: ["swift"] + arguments + ["--show-bin-path"],
-                                                     directory: workspace.root, log: workspace.logs.appending(path: "binary-path.log"))
-                build = pathProcess
-                let pathCode = try await pathProcess.wait()
-                await pathProcess.stop()
-                build = nil
-                guard pathCode == 0 else { throw PlaygroundError(pathProcess.diagnostics()) }
-                let path = pathProcess.diagnostics().trimmingCharacters(in: .whitespacesAndNewlines)
-                guard path.hasPrefix("/"), !path.contains("\n") else {
-                    throw PlaygroundError("Swift returned an invalid binary directory: \(path)")
-                }
-                binaryDirectory = URL(filePath: path)
+            var context = try BuildContext.capture(configuration: configuration, workspace: workspace)
+            var hash = digest(snapshot.fingerprint + context.fingerprint)
+            status.buildHash = hash
+            let products: URL
+            if let saved = try cache.lookup(hash) {
+                print("Reusing \(configuration.source.lastPathComponent) · \(hash.prefix(12))…")
+                reusedHash = hash
+                products = saved
+            } else {
+                print("Building \(configuration.source.lastPathComponent)…")
+                guard let compiled = try await compile(snapshot) else { return .discarded }
+                let compiledContext = try BuildContext.capture(configuration: configuration, workspace: workspace)
+                // SwiftPM may create/update the generated lockfile during resolution. Local
+                // sources must stay unchanged; otherwise we cannot safely identify these products.
+                guard compiledContext.inputsHash == context.inputsHash else { return .discarded }
+                context = compiledContext
+                hash = digest(snapshot.fingerprint + context.fingerprint)
+                status.buildHash = hash
+                products = compiled
             }
             try Task.checkCancellation()
             let token = UUID().uuidString
             let port = try availablePort()
-            let executable = try workspace.stage(binaryDirectory: binaryDirectory!)
+            let executable = try workspace.stage(binaryDirectory: products)
             var environment = ProcessInfo.processInfo.environment
             environment["ROOST_HOST"] = "127.0.0.1"
             environment["ROOST_PORT"] = String(port)
@@ -130,10 +125,15 @@ public final class Supervisor {
             candidate = next
             try await waitUntilHealthy(next, token: token)
             try Task.checkCancellation()
-            guard try isCurrent(snapshot) else {
+            guard try isCurrent(snapshot),
+                  try BuildContext.capture(configuration: configuration, workspace: workspace).fingerprint == context.fingerprint else {
                 await retire(next)
                 candidate = nil
                 return .discarded
+            }
+            if reusedHash == nil {
+                do { try cache.store(hash, from: executable.deletingLastPathComponent()) }
+                catch { print("Preview is ready, but its build could not be saved: \(error)") }
             }
             let previous = worker
             worker = next
@@ -143,16 +143,58 @@ public final class Supervisor {
             status.phase = .ready
             let elapsed = start.duration(to: .now).components
             status.buildMilliseconds = Int(elapsed.seconds * 1_000 + elapsed.attoseconds / 1_000_000_000_000_000)
+            status.cacheHit = reusedHash != nil
             status.diagnostics = ""
-            print("Ready at \(configuration.address) · build \(status.generation) · \(status.buildMilliseconds!) ms")
+            let cached = status.cacheHit ? " · cached" : ""
+            print("Ready at \(configuration.address) · build \(status.generation)\(cached) · \(status.buildMilliseconds!) ms")
             if let previous { await retire(previous) }
             return .finished
         } catch {
             if let candidate { await retire(candidate); self.candidate = nil }
             if let build { await build.stop(); self.build = nil }
+            if let reusedHash, lease != nil {
+                do { try cache.remove(reusedHash) }
+                catch { print("Could not remove saved build \(reusedHash): \(error)") }
+            }
             if !Task.isCancelled && !stopping { fail(String(describing: error)) }
             return .finished
         }
+    }
+
+    /// Nil means the compiler finished an obsolete source snapshot.
+    private func compile(_ snapshot: SourceSnapshot) async throws -> URL? {
+        let arguments = ["build", "--package-path", workspace.root.path, "--scratch-path", workspace.scratch.path]
+        let log = workspace.logs.appending(path: "build.log")
+        status.logPath = log.path
+        let compiler = try ManagedProcess(executable: URL(filePath: "/usr/bin/env"),
+                                          arguments: ["swift"] + arguments + ["--product", "PlaygroundPage"],
+                                          directory: workspace.root, log: log)
+        build = compiler
+        let code = try await compiler.wait()
+        await compiler.stop()
+        build = nil
+        try Task.checkCancellation()
+        guard try isCurrent(snapshot) else { return nil }
+        guard code == 0 else {
+            let diagnostics = workspace.mapDiagnostics(compiler.diagnostics())
+            throw PlaygroundError(CompilerDiagnostics.summarize(diagnostics))
+        }
+        if binaryDirectory == nil {
+            let pathProcess = try ManagedProcess(executable: URL(filePath: "/usr/bin/env"),
+                                                 arguments: ["swift"] + arguments + ["--show-bin-path"],
+                                                 directory: workspace.root, log: workspace.logs.appending(path: "binary-path.log"))
+            build = pathProcess
+            let pathCode = try await pathProcess.wait()
+            await pathProcess.stop()
+            build = nil
+            guard pathCode == 0 else { throw PlaygroundError(pathProcess.diagnostics()) }
+            let path = pathProcess.diagnostics().trimmingCharacters(in: .whitespacesAndNewlines)
+            guard path.hasPrefix("/"), !path.contains("\n") else {
+                throw PlaygroundError("Swift returned an invalid binary directory: \(path)")
+            }
+            binaryDirectory = URL(filePath: path)
+        }
+        return binaryDirectory
     }
 
     private func isCurrent(_ snapshot: SourceSnapshot) throws -> Bool {

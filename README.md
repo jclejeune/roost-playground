@@ -81,9 +81,11 @@ The theme is adapted from Roost's `examples/Roost/Public/css/app.css`, with its 
 
 - The input Swift file and its `Views/` directory are watched by content, with a short debounce for saves.
 - The browser shell stays open while a candidate version compiles in the background.
+- Returning to an exact previous version reuses its saved executable and resources without invoking Swift. The session keeps the eight most recently used successful builds; the status bar shows **Cached** on reuse.
+- Reuse requires identical Swift and template contents, local package sources/resources, manifests, and dependency resolutions. A similar file is not a match. Dependency changes are checked on the next source/template edit; restart the runner after changing the toolchain.
 - The candidate must start, answer its readiness token, and render successfully before replacing the active page. A stale build is discarded when a newer edit exists.
 - Compile errors and startup failures preserve the previous page and its live state. Diagnostics refer to the original source and template paths.
-- **Successful code reloads reset live state.** This version restarts the application; it does not preserve state across Swift compilation.
+- **Successful code reloads reset live state**, including cached versions. Each reload starts a fresh application process.
 - A preview crash is reported. Save another edit to start a new version.
 
 The shell and worker bind to loopback. Each preview runs on its own port inside the shell's iframe, and playground sessions use a cookie specific to that input. The browser polls a read-only status endpoint; editing happens in your editor.
@@ -95,10 +97,16 @@ All SwiftPM build products live under:
 ```text
 ~/Library/Caches/roost-playground/<checkout-id>/
 ├── runner/                  # CLI build
-└── previews/<input-id>/      # Generated package, build, logs, staged workers
+└── previews/<input-id>/      # Generated package
+    ├── .build/              # SwiftPM dependencies and incremental build products
+    ├── logs/                # Compiler and preview output
+    ├── runs/                # Isolated copies for active preview processes
+    └── versions/<hash>/     # Up to eight successful builds for this session
 ```
 
-This keeps signed bundles outside File Provider-managed source folders such as synced `Documents`. Each running preview owns a copy of its executable and resource bundles, so another build cannot change its loaded resources. Normal shutdown removes these staged copies; build caches and logs remain reusable.
+This keeps signed bundles outside File Provider-managed source folders such as synced `Documents`. Each running preview owns a copy of its executable and resource bundles, so another build cannot change its loaded resources.
+
+**Ctrl-C and SIGTERM remove the saved-version cache** after stopping the preview processes and removing their staged copies. SwiftPM's dependency/incremental cache and logs remain for later launches. A forced kill cannot run cleanup; the next runner removes leftover saved versions after acquiring the input's lock. Saved versions are never reused across runner sessions.
 
 Set `ROOST_PLAYGROUND_CACHE` to relocate the cache. Keep it outside synced folders. `ROOST_PLAYGROUND_ROOT` locates this checkout when invoking a compiled CLI directly; the launcher sets it automatically.
 

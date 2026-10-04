@@ -6,6 +6,8 @@ Environment: macOS, Swift 6.4 (Xcode 27.2 beta toolchain), Swift 6 language mode
 
 `./scripts/check.sh test` covers argument errors and relative input resolution, content fingerprints with unchanged timestamps, template removal, nested paths, distinct cache identities, escaped Swift literals, incremental writes, lock exclusion, bounded process output, exit status, and process-group cleanup.
 
+Session-cache tests cover independent executable/resource copies, least-recently-used eviction, missing or incomplete artifacts, stale-session cleanup, and hashes that change with local source/resource contents or dependency resolution, even when timestamps stay unchanged.
+
 The runtime tests also exercise its private Roost adapter: session ownership, cross-site and CSRF rejection, event validation, duplicate-event replay, stale revisions, revocation, and bundled browser assets. These are the original ESW integration contracts adapted to the renamed framework.
 
 `npm --prefix BrowserTests test` exercises the actual generated Swift package, Roost worker, ESW JavaScript bundle, and browser shell. Its acceptance assertions cover:
@@ -18,8 +20,10 @@ The runtime tests also exercise its private Roost adapter: session ownership, cr
 - SIGINT, workspace-lock release, restarting in the same browser tab, and an initially invalid file.
 - File-based HEEx rendering, template-only changes, template diagnostics, deletion/recreation, and SIGTERM cleanup.
 - An A → B → A undo after an obsolete compilation completes, without another save to unstick the watcher.
+- Exact source and HEEx rollbacks reuse successful builds; the source rollback leaves the compiler log untouched, restores the correct page with fresh state, and handles a live event.
+- Failed workers never enter the cache, duplicate runners cannot clear it, and SIGINT/SIGTERM remove saved versions. A new runner must compile again while retaining SwiftPM's incremental cache.
 
-The acceptance suite writes ready, mobile, compiler-error, and macro-error screenshots to `BrowserTests/artifacts/`.
+The acceptance suite writes ready, mobile, compiler-error, macro-error, and cached-version screenshots to `BrowserTests/artifacts/`.
 
 ## Verified on 2026-10-04
 
@@ -48,6 +52,15 @@ The shell and default previews now share a bundled stylesheet adapted from the R
 - Reviewed captures are in `BrowserTests/artifacts/roost-theme-1280.png`, `roost-theme-390.png`, `roost-theme-320.png`, and `macro-error.png`; the reference is `roost-demo-reference.png`.
 
 SwiftPM also synchronized the lockfile with the neighboring Roost manifest's existing Spectro 2.0.0 requirement. The SwiftSyntax revision is unchanged; its resolved repository URL follows the updated dependency graph.
+
+## Session build reuse, 2026-10-04
+
+- All **18 Swift tests** and **14 browser acceptance checkpoints** passed. The new browser cache assertion failed against the original runner before the supervisor integration was added.
+- In the measured A → B → A sequence, B compiled and became ready in **6,990 ms**; A reused its saved executable and resource bundles in **941 ms**. These are supervisor durations, excluding the save debounce and browser polling. The compiler log's modification time was unchanged on reuse.
+- Reuse restored the expected heading, reset the counter, and handled a real browser event. The `Cached · 0.9s` status and restored preview were visually reviewed in `BrowserTests/artifacts/cached-version.png`.
+- Returning to the original HEEx template was also a cache hit. Failed startup was not cached, and an attempted duplicate runner left the existing cache usable.
+- SIGTERM left no staged workers or saved versions and preserved the SwiftPM cache. A new session compiled again; SIGINT also removed its saved versions and closed its worker.
+- JavaScript syntax and whitespace checks passed. Tests used their own source copies and processes.
 
 ## Limits
 

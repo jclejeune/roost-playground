@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { readFile, writeFile, mkdir, open, rename, rm, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, open, rename, rm, readdir, stat } from 'node:fs/promises';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
@@ -52,9 +52,13 @@ async function readyAfter(generation) {
   }, `ready after build ${generation}`);
 }
 async function save(text, file = source) {
+  const before = await status();
   await writeFile(`${file}.saving`, text);
   await rename(`${file}.saving`, file);
-  await phase('building');
+  await poll(async () => {
+    const s = await status();
+    return s && (s.phase === 'building' || s.generation > before.generation || s.buildHash !== before.buildHash);
+  }, 'saved version handled');
 }
 async function stop(signal = 'SIGTERM') {
   if (child.exitCode !== null || child.signalCode !== null) return;
@@ -117,7 +121,7 @@ try {
   await page.setViewportSize({ width: 1280, height: 960 });
 
   let current = ready;
-  if (!process.env.PLAYGROUND_UNDO_ONLY) {
+  if (!process.env.PLAYGROUND_UNDO_ONLY && !process.env.PLAYGROUND_CACHE_ONLY) {
     const broken = original + '\nlet broken: Int = "compiler error"\n';
     await save(broken);
     await frame.getByRole('button', { name: 'Increase', exact: true }).click();
@@ -176,6 +180,8 @@ try {
     assert.equal(failedStartup.generation, 3);
     assert.equal(failedStartup.previewURL, current.previewURL);
     assert.match(failedStartup.diagnostics, /exited before it was ready \(23\)/);
+    const failedWorkspace = dirname(dirname(failedStartup.logPath));
+    assert(!existsSync(join(failedWorkspace, 'versions', failedStartup.buildHash)), 'A failed worker must never enter the cache');
     await frame.getByRole('button', { name: 'Increase', exact: true }).click();
     await count(1);
     console.log('PASS: a failed candidate cannot replace the working server');
@@ -184,8 +190,7 @@ try {
     await poll(async () => (await status())?.diagnostics.includes('Cannot read the playground files'), 'source deletion');
     await frame.getByRole('button', { name: 'Increase', exact: true }).click();
     await count(2);
-    await writeFile(source, latest);
-    await phase('building');
+    await save(latest);
     current = await readyAfter(3);
     await connected(current);
     await count(0);
@@ -200,6 +205,7 @@ try {
     assert.match(crash.diagnostics, /preview process exited/);
     await save(original);
     current = await readyAfter(4);
+    assert.equal(current.cacheHit, true, 'A rejected duplicate runner must not clear the active cache');
     await connected(current);
     console.log('PASS: worker crash is reported and a source edit recovers');
 
@@ -247,6 +253,7 @@ try {
     current = await readyAfter(3);
     await connected(current);
     await frame.getByRole('heading', { name: 'A template, alive.' }).waitFor();
+    assert.equal(current.cacheHit, true, 'Recreating the original template reuses its successful build');
     console.log('PASS: HEEx plugin, template-only rebuild, diagnostic mapping, deletion and recreation');
   }
 
@@ -268,12 +275,48 @@ try {
   await frame.getByRole('heading', { name: 'A little Swift, live.' }).waitFor();
   console.log('PASS: A → B → A undo cannot strand the watcher on an obsolete attempt');
 
-  assert.deepEqual(errors, [], 'No uncaught browser JavaScript errors');
+  const versionAHash = current.buildHash;
   const workspace = dirname(dirname(current.logPath));
+  const compilerLog = join(workspace, 'logs/build.log');
+  const versionB = versionA.replaceAll('A little Swift, live.', 'A different version.');
+  await save(versionB);
+  const compiledB = await readyAfter(current.generation);
+  assert.equal(compiledB.cacheHit, false);
+  assert.notEqual(compiledB.buildHash, versionAHash);
+  await connected(compiledB);
+  await frame.getByRole('heading', { name: 'A different version.' }).waitFor();
+  const lastCompilation = (await stat(compilerLog)).mtimeMs;
+  await save(versionA);
+  current = await readyAfter(compiledB.generation);
+  assert.equal(current.cacheHit, true, 'An exact source rollback must reuse its saved build');
+  assert.equal(current.buildHash, versionAHash);
+  assert.equal((await stat(compilerLog)).mtimeMs, lastCompilation, 'A cache hit must not invoke the compiler');
+  await connected(current);
+  await frame.getByRole('heading', { name: 'A little Swift, live.' }).waitFor();
+  await count(0);
+  await frame.getByRole('button', { name: 'Increase', exact: true }).click();
+  await count(1);
+  await poll(async () => (await page.locator('#status').textContent()).includes('Cached'), 'cache hit visible');
+  await page.screenshot({ path: join(artifacts, 'cached-version.png'), fullPage: true });
+  console.log(`PASS: A → B → A reuses executable/resources without compiling (${compiledB.buildMilliseconds} ms compile, ${current.buildMilliseconds} ms reuse)`);
+
+  assert.deepEqual(errors, [], 'No uncaught browser JavaScript errors');
   await stop();
   for (const address of previewAddresses) await assertClosed(address);
   assert.deepEqual(await readdir(join(workspace, 'runs')), [], 'No staged workers remain after shutdown');
-  console.log('PASS: SIGTERM closes workers and removes staged executables');
+  assert(!existsSync(join(workspace, 'versions')), 'SIGTERM removes the saved-version cache');
+  assert(existsSync(join(workspace, '.build')), 'SwiftPM dependency artifacts remain reusable');
+  console.log('PASS: SIGTERM closes workers and removes staged executables and saved versions');
+  child = launch();
+  await poll(status, 'new session', 15_000);
+  const restarted = await readyAfter(0);
+  assert.equal(restarted.cacheHit, false, 'Saved versions must not survive a new runner session');
+  await connected(restarted);
+  await count(0);
+  await stop('SIGINT');
+  await assertClosed(restarted.previewURL);
+  assert(!existsSync(join(workspace, 'versions')), 'SIGINT also removes the saved-version cache');
+  console.log('PASS: a restarted session compiles again and SIGINT clears its saved versions');
 } finally {
   await browser?.close();
   await stop();
