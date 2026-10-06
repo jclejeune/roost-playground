@@ -105,12 +105,16 @@ All SwiftPM build products live under:
 ```text
 ~/Library/Caches/roost-playground/<id>/
 ├── runner/                  # CLI build (clone launcher only)
-└── previews/<input-id>/      # Generated package
-    ├── .build/              # SwiftPM dependencies and incremental build products
-    ├── logs/                # Compiler and preview output
-    ├── runs/                # Isolated copies for active preview processes
-    └── versions/<hash>/     # Up to eight successful builds for this session
+└── previews/
+    ├── package/             # Generated package shared by every input
+    │   └── .build/          # SwiftPM dependencies and incremental build products
+    └── <input-id>/
+        ├── logs/            # Compiler and preview output
+        ├── runs/            # Isolated copies for active preview processes
+        └── versions/<hash>/ # Up to eight successful builds for this session
 ```
+
+Every input file builds in the same generated package, so dependencies compile once: after the first preview, opening another file takes seconds. Runners for different files take turns building.
 
 This keeps signed bundles outside File Provider-managed source folders such as synced `Documents`. Each running preview owns a copy of its executable and resource bundles, so another build cannot change its loaded resources.
 

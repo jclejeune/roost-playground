@@ -35,7 +35,7 @@ struct BuildContext {
             }
         }
         var resolution = SHA256()
-        try append(workspace.root.appending(path: "Package.resolved"), to: &resolution)
+        try append(workspace.package.appending(path: "Package.resolved"), to: &resolution)
         return Self(inputsHash: hex(hasher.finalize()), resolutionHash: hex(resolution.finalize()))
     }
 

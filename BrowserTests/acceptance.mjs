@@ -305,7 +305,7 @@ try {
   for (const address of previewAddresses) await assertClosed(address);
   assert.deepEqual(await readdir(join(workspace, 'runs')), [], 'No staged workers remain after shutdown');
   assert(!existsSync(join(workspace, 'versions')), 'SIGTERM removes the saved-version cache');
-  assert(existsSync(join(workspace, '.build')), 'SwiftPM dependency artifacts remain reusable');
+  assert(existsSync(join(dirname(workspace), 'package/.build')), 'Shared SwiftPM dependency artifacts remain reusable');
   console.log('PASS: SIGTERM closes workers and removes staged executables and saved versions');
   child = launch();
   await poll(status, 'new session', 15_000);

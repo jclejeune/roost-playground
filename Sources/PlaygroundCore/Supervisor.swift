@@ -80,6 +80,7 @@ public final class Supervisor {
         status.cacheHit = false
         var reusedHash: String?
         do {
+            let packageLock = try await workspace.lockPackage()
             try workspace.prepare(snapshot: snapshot)
             var context = try BuildContext.capture(configuration: configuration, workspace: workspace)
             var hash = digest(snapshot.fingerprint + context.fingerprint)
@@ -105,6 +106,7 @@ public final class Supervisor {
             let token = UUID().uuidString
             let port = try availablePort()
             let executable = try workspace.stage(binaryDirectory: products)
+            packageLock.release()
             var environment = ProcessInfo.processInfo.environment
             environment["ROOST_HOST"] = "127.0.0.1"
             environment["ROOST_PORT"] = String(port)
@@ -163,12 +165,12 @@ public final class Supervisor {
 
     /// Nil means the compiler finished an obsolete source snapshot.
     private func compile(_ snapshot: SourceSnapshot) async throws -> URL? {
-        let arguments = ["build", "--package-path", workspace.root.path, "--scratch-path", workspace.scratch.path]
+        let arguments = ["build", "--package-path", workspace.package.path, "--scratch-path", workspace.scratch.path]
         let log = workspace.logs.appending(path: "build.log")
         status.logPath = log.path
         let compiler = try ManagedProcess(executable: URL(filePath: "/usr/bin/env"),
                                           arguments: ["swift"] + arguments + ["--product", "PlaygroundPage"],
-                                          directory: workspace.root, log: log)
+                                          directory: workspace.package, log: log)
         build = compiler
         let code = try await compiler.wait()
         await compiler.stop()
@@ -182,7 +184,7 @@ public final class Supervisor {
         if binaryDirectory == nil {
             let pathProcess = try ManagedProcess(executable: URL(filePath: "/usr/bin/env"),
                                                  arguments: ["swift"] + arguments + ["--show-bin-path"],
-                                                 directory: workspace.root, log: workspace.logs.appending(path: "binary-path.log"))
+                                                 directory: workspace.package, log: workspace.logs.appending(path: "binary-path.log"))
             build = pathProcess
             let pathCode = try await pathProcess.wait()
             await pathProcess.stop()

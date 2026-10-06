@@ -60,20 +60,20 @@ struct WorkspaceTests {
         let workspace = Workspace(configuration: fixture.configuration)
         let snapshot = try SourceSnapshot.capture(configuration: fixture.configuration)
         try workspace.prepare(snapshot: snapshot)
-        let generated = workspace.root.appending(path: "Sources/PlaygroundPage/Page.swift")
+        let generated = workspace.package.appending(path: "Sources/PlaygroundPage/Page.swift")
         let content = try String(contentsOf: generated, encoding: .utf8)
         #expect(content.contains("#sourceLocation(file: \(String(reflecting: fixture.source.path)), line: 1)"))
         #expect(content.hasSuffix(snapshot.source))
         let before = try generated.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
         try workspace.prepare(snapshot: snapshot)
         #expect(try generated.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate == before)
-        let manifest = try String(contentsOf: workspace.root.appending(path: "Package.swift"), encoding: .utf8)
+        let manifest = try String(contentsOf: workspace.package.appending(path: "Package.swift"), encoding: .utf8)
         #expect(manifest.contains("ESWBuildPlugin"))
         #expect(manifest.contains("roost-playground.git\", exact: \"\(playgroundVersion)\""))
         #expect(manifest.contains("ESW.git"))
         try "".write(to: fixture.root.appending(path: "Package.swift"), atomically: true, encoding: .utf8)
         try workspace.prepare(snapshot: snapshot)
-        let checkout = try String(contentsOf: workspace.root.appending(path: "Package.swift"), encoding: .utf8)
+        let checkout = try String(contentsOf: workspace.package.appending(path: "Package.swift"), encoding: .utf8)
         #expect(checkout.contains(String(reflecting: fixture.configuration.packageRoot.path)))
         let escapedPath = String(String(reflecting: fixture.configuration.source.path).dropFirst().dropLast())
         let diagnostic = "\(escapedPath):2:1: error: broken"
@@ -91,6 +91,20 @@ struct WorkspaceTests {
         withExtendedLifetime(replacement) {}
     }
 
+    @MainActor @Test func sharedPackageAdmitsOneBuilderAtATime() async throws {
+        let fixture = try Fixture(); defer { fixture.clean() }
+        let workspace = Workspace(configuration: fixture.configuration)
+        let first = try await workspace.lockPackage()
+        let waiting = Task { @MainActor in
+            try await workspace.lockPackage().release()
+            return ContinuousClock.now
+        }
+        try await Task.sleep(for: .milliseconds(400))
+        let released = ContinuousClock.now
+        first.release()
+        #expect(try await waiting.value >= released)
+    }
+
     @Test func inputsUseSeparateWorkspacesAndDeletedTemplatesLeaveNoGeneratedCopy() throws {
         let fixture = try Fixture(); defer { fixture.clean() }
         let other = fixture.root.appending(path: "Other.swift")
@@ -99,6 +113,7 @@ struct WorkspaceTests {
                                               packageRoot: fixture.root, cacheRoot: fixture.configuration.cacheRoot)
         let workspace = Workspace(configuration: fixture.configuration)
         #expect(workspace.root != Workspace(configuration: configuration).root)
+        #expect(workspace.package == Workspace(configuration: configuration).package)
         let views = fixture.configuration.views.appending(path: "nested")
         try FileManager.default.createDirectory(at: views, withIntermediateDirectories: true)
         let template = views.appending(path: "item.heex")
@@ -106,7 +121,7 @@ struct WorkspaceTests {
         let snapshot = try SourceSnapshot.capture(configuration: fixture.configuration)
         #expect(snapshot.templates.keys.contains("nested/item.heex"))
         try workspace.prepare(snapshot: snapshot)
-        let copy = workspace.root.appending(path: "Sources/PlaygroundPage/Views/nested/item.heex")
+        let copy = workspace.package.appending(path: "Sources/PlaygroundPage/Views/nested/item.heex")
         #expect(FileManager.default.fileExists(atPath: copy.path))
         try FileManager.default.removeItem(at: template)
         try workspace.prepare(snapshot: SourceSnapshot.capture(configuration: fixture.configuration))

@@ -2,24 +2,30 @@ import Darwin
 import Foundation
 
 public final class WorkspaceLock {
-    private let descriptor: Int32
+    private var descriptor: Int32
 
-    fileprivate init(url: URL) throws {
+    /// Nil when another process holds the lock.
+    fileprivate init?(url: URL) throws {
         let acquired = open(url.path, O_CREAT | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR)
         guard acquired >= 0 else { throw PlaygroundError("Cannot open workspace lock: \(url.path)") }
         guard flock(acquired, LOCK_EX | LOCK_NB) == 0 else {
             close(acquired)
-            throw PlaygroundError("This file already has a running playground. Stop it before starting another.")
+            return nil
         }
         // Only take ownership after success. A fully initialized class runs deinit even when
         // init throws; closing in both paths could close an unrelated descriptor reused by another thread.
         descriptor = acquired
     }
 
-    deinit {
+    /// Releases early, for a lock held across part of a function.
+    public func release() {
+        guard descriptor >= 0 else { return }
         flock(descriptor, LOCK_UN)
         close(descriptor)
+        descriptor = -1
     }
+
+    deinit { release() }
 }
 
 /// The release tag an installed binary compiles previews against. Bump it with each tag.
@@ -27,23 +33,46 @@ let playgroundVersion = "0.1.0-alpha.3"
 
 public struct Workspace: Sendable {
     public let configuration: Configuration
+    /// Per input: its lock, logs, staged runs, and saved versions.
     public let root: URL
-    public var scratch: URL { root.appending(path: ".build") }
+    /// Every input builds in one generated package, so dependencies compile once per installation.
+    public let package: URL
+    public var scratch: URL { package.appending(path: ".build") }
     public var logs: URL { root.appending(path: "logs") }
 
     public init(configuration: Configuration) {
         self.configuration = configuration
-        root = configuration.cacheRoot.appending(path: "previews/\(digest(configuration.source.path).prefix(24))")
+        let previews = configuration.cacheRoot.appending(path: "previews")
+        root = previews.appending(path: String(digest(configuration.source.path).prefix(24)))
+        package = previews.appending(path: "package")
     }
 
     public func acquire() throws -> WorkspaceLock {
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        return try WorkspaceLock(url: root.appending(path: "playground.lock"))
+        let manager = FileManager.default
+        try manager.createDirectory(at: root, withIntermediateDirectories: true)
+        guard let lock = try WorkspaceLock(url: root.appending(path: "playground.lock")) else {
+            throw PlaygroundError("This file already has a running playground. Stop it before starting another.")
+        }
+        // Earlier versions generated a package per input; its build products are now unused.
+        for legacy in [".build", "Sources", "Package.swift", "Package.resolved"] {
+            try? manager.removeItem(at: root.appending(path: legacy))
+        }
+        return lock
+    }
+
+    /// Hold the result from writing the shared package until its products are staged.
+    /// Runners for other inputs wait here while this one builds.
+    public func lockPackage() async throws -> WorkspaceLock {
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        while true {
+            if let lock = try WorkspaceLock(url: package.appending(path: "build.lock")) { return lock }
+            try await Task.sleep(for: .milliseconds(200))
+        }
     }
 
     public func prepare(snapshot: SourceSnapshot) throws {
         let manager = FileManager.default
-        let target = root.appending(path: "Sources/PlaygroundPage")
+        let target = package.appending(path: "Sources/PlaygroundPage")
         let views = target.appending(path: "Views")
         try manager.createDirectory(at: target, withIntermediateDirectories: true)
         try manager.createDirectory(at: logs, withIntermediateDirectories: true)
@@ -74,7 +103,7 @@ public struct Workspace: Sendable {
             swiftLanguageModes: [.v6]
         )
         """
-        try writeIfChanged(manifest + "\n", to: root.appending(path: "Package.swift"))
+        try writeIfChanged(manifest + "\n", to: package.appending(path: "Package.swift"))
         let mapped = "#sourceLocation(file: \(String(reflecting: configuration.source.path)), line: 1)\n" + snapshot.source
         try writeIfChanged(mapped, to: target.appending(path: "Page.swift"))
         if let files = manager.enumerator(atPath: views.path) {
@@ -95,8 +124,8 @@ public struct Workspace: Sendable {
         // Swift diagnostics may retain the escapes from #sourceLocation's file literal.
         let escapedSource = String(String(reflecting: configuration.source.path).dropFirst().dropLast())
         return text.replacingOccurrences(of: escapedSource, with: configuration.source.path)
-            .replacingOccurrences(of: root.appending(path: "Sources/PlaygroundPage/Views").path, with: configuration.views.path)
-            .replacingOccurrences(of: root.appending(path: "Sources/PlaygroundPage/Page.swift").path, with: configuration.source.path)
+            .replacingOccurrences(of: package.appending(path: "Sources/PlaygroundPage/Views").path, with: configuration.views.path)
+            .replacingOccurrences(of: package.appending(path: "Sources/PlaygroundPage/Page.swift").path, with: configuration.source.path)
     }
 
     /// An active preview must never depend on build products that a later compilation can replace.

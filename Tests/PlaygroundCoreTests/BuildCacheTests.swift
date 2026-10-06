@@ -76,7 +76,7 @@ struct BuildCacheTests {
         #expect(first.inputsHash != changed.inputsHash)
         try "blue".write(to: css, atomically: true, encoding: .utf8)
         #expect(try BuildContext.capture(configuration: fixture.configuration, workspace: workspace).fingerprint == first.fingerprint)
-        try "resolved version".write(to: workspace.root.appending(path: "Package.resolved"), atomically: true, encoding: .utf8)
+        try "resolved version".write(to: workspace.package.appending(path: "Package.resolved"), atomically: true, encoding: .utf8)
         let resolved = try BuildContext.capture(configuration: fixture.configuration, workspace: workspace)
         #expect(resolved.inputsHash == first.inputsHash)
         #expect(resolved.fingerprint != first.fingerprint)
