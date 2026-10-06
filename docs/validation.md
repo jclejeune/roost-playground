@@ -67,4 +67,4 @@ SwiftPM also synchronized the lockfile with the neighboring Roost manifest's exi
 
 This is a macOS first version. It watches the selected Swift file and template directory; edits to dependency repositories or additional Swift files are outside the watch set. There is no browser editor, arbitrary package dependency UI, state migration, Linux validation, or remote execution service. The first cold build includes the framework dependency graph; later edits compile incrementally.
 
-SwiftPM still warns that ESW and Spectro reach SwiftSyntax through two repository URLs. No upstream repository was changed to suppress it.
+Spectro 2.1.1 depends on SwiftSyntax through the same `swiftlang/` URL as ESW, so SwiftPM no longer reports a conflicting package identity.

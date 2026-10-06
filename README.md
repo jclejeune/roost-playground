@@ -132,8 +132,6 @@ To develop ESW, Nexus, Roost, and Spectro alongside the playground, set `ROOST_E
 
 A private adapter in `Sources/RoostPlayground/` connects ESW Live to Roost; this keeps the playground independent of the older `ESWLivePeregrine` integration during the framework rename.
 
-SwiftPM currently warns that ESW and Spectro reach SwiftSyntax through two repository URLs (`swiftlang/` and `apple/`). This needs a coordinated change upstream.
-
 ### Checks
 
 ```sh
