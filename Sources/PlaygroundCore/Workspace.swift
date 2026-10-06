@@ -50,9 +50,9 @@ public struct Workspace: Sendable {
         // A checkout compiles previews against its own sources; an installed binary fetches its release.
         let library = FileManager.default.fileExists(atPath: configuration.packageRoot.appending(path: "Package.swift").path)
             ? ".package(name: \"roost-playground\", path: \(String(reflecting: configuration.packageRoot.path)))"
-            : ".package(url: \"https://github.com/Maartz/roost-playground.git\", exact: \"\(playgroundVersion)\")"
+            : ".package(url: \"https://github.com/roost-framework/roost-playground.git\", exact: \"\(playgroundVersion)\")"
         let esw = configuration.ecosystemRoot.map { ".package(path: \(String(reflecting: $0.appending(path: "esw").path)))" }
-            ?? ".package(url: \"https://github.com/Spectro-ORM/ESW.git\", from: \"1.5.0\")"
+            ?? ".package(url: \"https://github.com/roost-framework/ESW.git\", from: \"1.5.0\")"
         let manifest = """
         // swift-tools-version: 6.3
         import PackageDescription
