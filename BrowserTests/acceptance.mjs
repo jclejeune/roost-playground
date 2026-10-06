@@ -83,7 +83,7 @@ try {
     const s = await status();
     if (s?.phase === 'failed') throw new Error(s.diagnostics);
     return s?.phase === 'ready' && s;
-  }, 'first compile');
+  }, 'first compile', 1_200_000); // A cold CI runner compiles every dependency first.
   assert.equal(ready.generation, 1);
   const chrome = process.env.PLAYWRIGHT_EXECUTABLE_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
   browser = await chromium.launch({ headless: true, ...(existsSync(chrome) ? { executablePath: chrome } : {}) });
