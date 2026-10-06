@@ -291,9 +291,11 @@ try {
   const beforeUndo = current.generation;
   const versionA = original + '\n// Undo regression: A\n';
   await save(versionA);
-  const compilationLog = (await status()).logPath;
+  // The status names build.log once this compilation has started (and truncated it).
+  const compilationLog = await poll(async () => { const path = (await status())?.logPath; return path?.endsWith('/build.log') && path; }, 'compilation starts');
   await writeFile(source, original + '\n// Undo regression: B\n');
-  await poll(async () => (await readFile(compilationLog, 'utf8')).includes('Build complete!'), 'obsolete compilation finishes');
+  // Swift 6.3 prints "Build of product 'PlaygroundPage' complete!"; Swift 6.4 prints "Build complete!".
+  await poll(async () => /complete!/.test(await readFile(compilationLog, 'utf8')), 'obsolete compilation finishes');
   await new Promise(resolve => setTimeout(resolve, 200));
   await writeFile(source, versionA);
   current = await poll(async () => {
