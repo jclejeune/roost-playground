@@ -145,7 +145,7 @@ npm test
 
 Browser acceptance uses an installed Google Chrome on macOS, or Playwright's Chromium (`npx playwright install chromium`). Set `PLAYWRIGHT_EXECUTABLE_PATH` to use another Chromium binary. The tests own their input copies, ports, and processes; screenshots and logs go in `BrowserTests/artifacts/`.
 
-See [validation notes](docs/validation.md) for the exercised behaviors and current limits.
+GitHub Actions runs both on every push to `main`. See [validation notes](docs/validation.md) for the exercised behaviors and current limits.
 
 ### Releasing
 
@@ -154,4 +154,4 @@ An installed command compiles previews against the release named by `playgroundV
 1. Set `playgroundVersion` to the new version, without the `v` prefix (for example `0.1.0-alpha.4`).
 2. Update the version in this README's Mint command.
 3. Commit, tag with the `v` prefix (`v0.1.0-alpha.4`), and push the tag.
-4. Run `mint install roost-framework/roost-playground@<tag>` and build a preview outside any clone.
+4. CI checks that the tag matches `playgroundVersion`, installs the tag with Mint, and builds a starter outside any clone ([`scripts/smoke.sh`](scripts/smoke.sh)). Publish the GitHub release once it passes.
