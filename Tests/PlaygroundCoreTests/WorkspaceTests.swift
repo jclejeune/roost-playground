@@ -80,6 +80,22 @@ struct WorkspaceTests {
         #expect(workspace.mapDiagnostics(diagnostic) == "\(fixture.configuration.source.path):2:1: error: broken")
     }
 
+    @Test func newRequiresAFreshSwiftFile() throws {
+        let fixture = try Fixture(); defer { fixture.clean() }
+        let fresh = try Configuration(arguments: ["new", "Fresh.swift", "--no-open"], currentDirectory: fixture.root,
+                                      packageRoot: fixture.root)
+        #expect(fresh.createsSource)
+        #expect(fresh.source.lastPathComponent == "Fresh.swift")
+        #expect(throws: PlaygroundError.self) {
+            try Configuration(arguments: ["new", fixture.source.path], currentDirectory: fixture.root, packageRoot: fixture.root)
+        }
+        #expect(throws: PlaygroundError.self) {
+            try Configuration(arguments: ["new", "Fresh.txt"], currentDirectory: fixture.root, packageRoot: fixture.root)
+        }
+        #expect(!fixture.configuration.createsSource)
+        #expect(starterPlayground.contains("struct Counter: LivePlayground"))
+    }
+
     @Test func workspaceLockExcludesAnotherWriter() throws {
         let fixture = try Fixture(); defer { fixture.clean() }
         let workspace = Workspace(configuration: fixture.configuration)

@@ -6,13 +6,14 @@ A live Swift application in one file, powered by ESW Live and Roost (the renamed
 
 ## Quick start
 
-Install the command with [Mint](https://github.com/yonaskolb/Mint), fetch the counter example, and run it:
+Install the command with [Mint](https://github.com/yonaskolb/Mint), then create and run a starter file:
 
 ```sh
 mint install roost-framework/roost-playground@v0.1.0-alpha.3
-curl -O https://raw.githubusercontent.com/roost-framework/roost-playground/v0.1.0-alpha.3/Examples/Counter.swift
-roost-playground Counter.swift
+roost-playground new Counter.swift
 ```
+
+`new` writes the [one-file example](#one-file) below and starts watching it. Later, run `roost-playground Counter.swift`.
 
 Mint links the command into `~/.mint/bin`; add that directory to your `PATH`. To upgrade, install a newer release tag the same way.
 
@@ -24,7 +25,7 @@ cd roost-playground
 ./playground Examples/Counter.swift
 ```
 
-The browser opens at **http://127.0.0.1:4567**. Click the counter, submit the form, then edit `Counter.swift` and save. The preview updates automatically. A failed build shows its diagnostics while the last working page stays interactive.
+The browser opens at **http://127.0.0.1:4567**. Click the counter, then edit `Counter.swift` and save. The preview updates automatically. A failed build shows its diagnostics while the last working page stays interactive.
 
 The first preview downloads and compiles ESW, Roost, and their dependencies, which takes a couple of minutes. Later edits rebuild incrementally in seconds.
 
@@ -35,13 +36,14 @@ import RoostPlayground
 
 @main
 struct Counter: LivePlayground {
-    func mount(_ context: LiveContext) async throws -> Int { 0 }
+    func mount(_: LiveContext) async throws -> Int { 0 }
 
     func handleEvent(_ event: LiveEvent, state: Int) async throws -> Int {
         guard event.name == "increment" else { throw LiveError.invalidEvent }
         return state + 1
     }
 
+    // The template uses `count` inside a string; formatters cannot see that reference.
     // swiftformat:disable:next unusedArguments
     func render(_ count: Int) -> ESWLiveRender {
         #live("""
@@ -150,6 +152,6 @@ See [validation notes](docs/validation.md) for the exercised behaviors and curre
 An installed command compiles previews against the release named by `playgroundVersion` in `Sources/PlaygroundCore/Workspace.swift`. Before tagging:
 
 1. Set `playgroundVersion` to the new version, without the `v` prefix (for example `0.1.0-alpha.4`).
-2. Update the version in this README's Mint and `curl` commands.
+2. Update the version in this README's Mint command.
 3. Commit, tag with the `v` prefix (`v0.1.0-alpha.4`), and push the tag.
 4. Run `mint install roost-framework/roost-playground@<tag>` and build a preview outside any clone.

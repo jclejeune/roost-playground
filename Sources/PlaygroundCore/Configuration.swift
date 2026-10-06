@@ -12,6 +12,8 @@ public struct Configuration: Sendable {
     public let ecosystemRoot: URL?
     public let port: Int
     public let opensBrowser: Bool
+    /// `new` was given: write the starter file before watching it.
+    public let createsSource: Bool
     public var views: URL { source.deletingLastPathComponent().appending(path: "Views") }
     public var address: String { "http://127.0.0.1:\(port)" }
 
@@ -20,10 +22,12 @@ public struct Configuration: Sendable {
         var input: String?
         var port = 4567
         var opensBrowser = true
+        var createsSource = false
         var index = 0
         while index < arguments.count {
             let argument = arguments[index]
             switch argument {
+            case "new" where index == 0: createsSource = true
             case "--no-open": opensBrowser = false
             case "--port":
                 index += 1
@@ -42,10 +46,17 @@ public struct Configuration: Sendable {
         guard let input else { throw PlaygroundError("Choose a Swift file: playground Counter.swift") }
         let directory = URL(filePath: currentDirectory.path, directoryHint: .isDirectory)
         let source = URL(filePath: input, relativeTo: directory).standardizedFileURL.resolvingSymlinksInPath()
-        guard source.pathExtension == "swift",
-              (try? source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true,
-              FileManager.default.isReadableFile(atPath: source.path) else {
-            throw PlaygroundError("Expected a readable .swift file: \(source.path)")
+        if createsSource {
+            guard source.pathExtension == "swift" else { throw PlaygroundError("Name the new file with .swift: \(source.path)") }
+            guard !FileManager.default.fileExists(atPath: source.path) else {
+                throw PlaygroundError("\(source.path) already exists. Run it without `new`.")
+            }
+        } else {
+            guard source.pathExtension == "swift",
+                  (try? source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true,
+                  FileManager.default.isReadableFile(atPath: source.path) else {
+                throw PlaygroundError("Expected a readable .swift file: \(source.path)")
+            }
         }
         self.source = source
         self.packageRoot = packageRoot.standardizedFileURL.resolvingSymlinksInPath()
@@ -54,5 +65,6 @@ public struct Configuration: Sendable {
         self.ecosystemRoot = ecosystemRoot
         self.port = port
         self.opensBrowser = opensBrowser
+        self.createsSource = createsSource
     }
 }

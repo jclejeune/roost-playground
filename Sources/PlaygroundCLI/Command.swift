@@ -19,6 +19,9 @@ struct Command {
             print("""
             Roost Playground
             Usage: playground <file.swift> [--port 4567] [--no-open]
+                   playground new <file.swift> [--port 4567] [--no-open]
+
+            `new` writes a starter playground to the file, then runs it.
 
             Save the Swift file or a template in its sibling Views directory to rebuild.
             Failed builds keep the last working preview. Successful reloads reset live state.
@@ -34,6 +37,10 @@ struct Command {
                                               packageRoot: packageRoot,
                                               cacheRoot: environment["ROOST_PLAYGROUND_CACHE"].map { URL(filePath: $0) },
                                               ecosystemRoot: environment["ROOST_ECOSYSTEM_PATH"].map { URL(filePath: $0) })
+        if configuration.createsSource {
+            try Data(starterPlayground.utf8).write(to: configuration.source, options: .withoutOverwriting)
+            print("Created \(configuration.source.path)")
+        }
         let supervisor = try Supervisor(configuration: configuration)
         let router = Router()
         var assets = [
