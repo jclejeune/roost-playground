@@ -71,9 +71,12 @@ SwiftPM also synchronized the lockfile with the neighboring Roost manifest's exi
 - The status bar reported "Fetching packages…" and "Building n of N" during builds, including Swift 6.4's thin-space step counter.
 - `roost-playground new` wrote the starter, which built and rendered; a second `new` for the same file was refused.
 - With Spectro 2.1.1 resolved, the build reports no conflicting SwiftSyntax identity.
-- The tag workflow checks `playgroundVersion`, installs the tag with Mint, and builds a starter outside any checkout.
+- The tag workflow checks `playgroundVersion`, installs the tag with Mint on macOS 26 with Xcode's toolchain, and builds a starter outside any checkout.
+- On macOS 15 with the swift.org 6.3.3 toolchain, Mint's release build of the command stopped at launch: `Symbol not found: _$sScfsE25isIsolatingCurrentContextSbSgyF` in `/usr/lib/swift/libswift_Concurrency.dylib`. The same toolchain's debug builds, which the clone launcher uses, pass the whole acceptance suite there.
 
 ## Limits
+
+Installing with Mint needs macOS 26 or later; on macOS 14 and 15, run from a clone (see the release 1.0.0 notes above).
 
 This is a macOS first version. It watches the selected Swift file and template directory; edits to dependency repositories or additional Swift files are outside the watch set. There is no browser editor, arbitrary package dependency UI, state migration, Linux validation, or remote execution service. The first cold build includes the framework dependency graph; later edits compile incrementally.
 

@@ -17,6 +17,8 @@ roost-playground new Counter.swift
 
 Mint links the command into `~/.mint/bin`; add that directory to your `PATH`. To upgrade, install a newer release tag the same way.
 
+On macOS 14 and 15, Swift 6.3 comes from a swift.org toolchain, and Mint's release build of the command fails to launch there (`Symbol not found: …isIsolatingCurrentContext…`). Run from a clone instead; macOS 26 with Xcode 26.4 or later is unaffected.
+
 Or run it from a clone:
 
 ```sh

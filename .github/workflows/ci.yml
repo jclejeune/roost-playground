@@ -14,14 +14,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
-
 jobs:
+  # macOS 15 tops out at Xcode 26.3 (Swift 6.2), so it uses a swift.org 6.3 toolchain.
   test:
     if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: macos-15
     timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
       - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3, Swiftly-backed installer
@@ -41,9 +41,11 @@ jobs:
           name: acceptance-artifacts
           path: BrowserTests/artifacts
 
+  # Mint builds in release mode. Such a build from a swift.org toolchain cannot launch on
+  # macOS 15, so the release is verified the way most users install it: macOS 26 with Xcode.
   release:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -52,9 +54,8 @@ jobs:
           version="$(sed -n 's/^let playgroundVersion = "\(.*\)"$/\1/p' Sources/PlaygroundCore/Workspace.swift)"
           echo "playgroundVersion=$version tag=$GITHUB_REF_NAME"
           test "v$version" = "$GITHUB_REF_NAME"
-      - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3, Swiftly-backed installer
-        with:
-          swift-version: "6.3.3"
+      - name: Show the toolchain
+        run: swift --version
       - name: Install the tag with Mint
         run: |
           brew install mint
