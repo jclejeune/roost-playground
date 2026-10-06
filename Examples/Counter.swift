@@ -10,7 +10,9 @@ struct Counter: LivePlayground {
         var greeting = "Your next interaction runs in Swift."
     }
 
-    func mount(_ context: LiveContext) async throws -> State { State() }
+    func mount(_: LiveContext) async throws -> State {
+        State()
+    }
 
     func handleEvent(_ event: LiveEvent, state: State) async throws -> State {
         var state = state
