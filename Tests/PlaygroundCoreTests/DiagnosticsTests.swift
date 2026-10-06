@@ -60,4 +60,14 @@ struct DiagnosticsTests {
         let failure = "\u{1B}[1;31merror: \u{1B}[0mlink command failed with exit code 1"
         #expect(CompilerDiagnostics.summarize(failure) == "error: link command failed with exit code 1")
     }
+
+    @Test func progressReportsBuildStepsButNotRepositoryFetches() {
+        #expect(CompilerDiagnostics.progress("Building for debugging...") == nil)
+        #expect(CompilerDiagnostics.progress("Fetching https://github.com/swiftlang/swift-syntax.git") == "Fetching packages…")
+        #expect(CompilerDiagnostics.progress("Computing version\n[1/83052] Fetching vapor") == "Fetching packages…")
+        let build = "[1/83052] Fetching vapor\nBuilding for debugging...\n[311/1374] Compiling NIO\n[312/1374] Compiling Roost Page.swift\n"
+        #expect(CompilerDiagnostics.progress(build) == "Building 312 of 1374")
+        // Swift 6.4's build system separates the counter with thin spaces.
+        #expect(CompilerDiagnostics.progress("[Computing dependencies]\n[5\u{2009}/\u{2009}11] SwiftSyntaxMacroExpansion") == "Building 5 of 11")
+    }
 }

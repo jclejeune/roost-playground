@@ -30,4 +30,15 @@ enum CompilerDiagnostics {
         finish()
         return hasSourceError ? sections.joined(separator: "\n\n") : plain
     }
+
+    /// How far SwiftPM has got, read from the tail of its output.
+    static func progress(_ output: String) -> String? {
+        for line in output.split(whereSeparator: \.isNewline).reversed() {
+            guard let match = line.firstMatch(of: /^\[(\d+)\s*\/\s*(\d+)\] (.*)/) else { continue }
+            // Repository fetches print their own [n/N] counts, which are not build steps.
+            if match.3.hasPrefix("Fetching") || match.3.hasPrefix("Cloning") { return "Fetching packages…" }
+            return "Building \(match.1) of \(match.2)"
+        }
+        return output.contains("Fetching ") || output.contains("Computing version") ? "Fetching packages…" : nil
+    }
 }

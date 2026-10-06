@@ -80,7 +80,9 @@ public final class Supervisor {
         status.cacheHit = false
         var reusedHash: String?
         do {
+            status.progress = "Waiting for another build…"
             let packageLock = try await workspace.lockPackage()
+            status.progress = nil
             try workspace.prepare(snapshot: snapshot)
             var context = try BuildContext.capture(configuration: configuration, workspace: workspace)
             var hash = digest(snapshot.fingerprint + context.fingerprint)
@@ -172,6 +174,13 @@ public final class Supervisor {
                                           arguments: ["swift"] + arguments + ["--product", "PlaygroundPage"],
                                           directory: workspace.package, log: log)
         build = compiler
+        let watcher = Task { [weak self] in
+            while !Task.isCancelled {
+                self?.status.progress = CompilerDiagnostics.progress(compiler.diagnostics(limit: 4_096))
+                try? await Task.sleep(for: .milliseconds(300))
+            }
+        }
+        defer { watcher.cancel(); status.progress = nil }
         let code = try await compiler.wait()
         await compiler.stop()
         build = nil

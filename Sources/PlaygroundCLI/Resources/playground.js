@@ -8,7 +8,7 @@ function render(state) {
   element('filename').textContent = state.filename;
   element('dot').dataset.phase = state.phase;
   const seconds = state.buildMilliseconds == null ? '' : ` · ${(state.buildMilliseconds / 1000).toFixed(1)}s`;
-  const message = ({ building: 'Building…', ready: `${state.cacheHit ? 'Cached' : 'Live'}${seconds}`, failed: 'Needs attention', stopped: 'Stopped' })[state.phase];
+  const message = ({ building: state.progress || 'Building…', ready: `${state.cacheHit ? 'Cached' : 'Live'}${seconds}`, failed: 'Needs attention', stopped: 'Stopped' })[state.phase];
   if (element('status').textContent !== message) element('status').textContent = message;
   element('generation').textContent = state.generation ? `Build ${state.generation}` : 'First build';
   const failed = state.phase === 'failed';
