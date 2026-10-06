@@ -1,6 +1,6 @@
 # Validation
 
-Environment: macOS, Swift 6.4 (Xcode 27.2 beta toolchain), Swift 6 language mode, macOS 14 deployment target. The Swift 6.3 minimum in the manifest has not been separately exercised with a 6.3 toolchain.
+Environment: local runs use macOS with Swift 6.4 (Xcode 27.2 beta toolchain); CI runs on GitHub's macOS 15 image with Swift 6.3.3 and the Xcode 26.3 SDK. Swift 6 language mode, macOS 14 deployment target.
 
 ## Automated checks
 
@@ -62,6 +62,16 @@ SwiftPM also synchronized the lockfile with the neighboring Roost manifest's exi
 - Returning to the original HEEx template was also a cache hit. Failed startup was not cached, and an attempted duplicate runner left the existing cache usable.
 - SIGTERM left no staged workers or saved versions and preserved the SwiftPM cache. A new session compiled again; SIGINT also removed its saved versions and closed its worker.
 - JavaScript syntax and whitespace checks passed. Tests used their own source copies and processes.
+
+## Release 1.0.0, 2026-10-06
+
+- `./scripts/check.sh test` passed 25 Swift tests locally (Swift 6.4) and in CI (Swift 6.3.3).
+- The browser acceptance suite passed locally and in CI, including the new carried-state checkpoint.
+- A second input file built in 7.4 s against the shared preview package, versus 82 s for the first cold build. Two runners for different files built concurrently, took turns on the package lock, and each served its own page.
+- The status bar reported "Fetching packages…" and "Building n of N" during builds, including Swift 6.4's thin-space step counter.
+- `roost-playground new` wrote the starter, which built and rendered; a second `new` for the same file was refused.
+- With Spectro 2.1.1 resolved, the build reports no conflicting SwiftSyntax identity.
+- The tag workflow checks `playgroundVersion`, installs the tag with Mint, and builds a starter outside any checkout.
 
 ## Limits
 
