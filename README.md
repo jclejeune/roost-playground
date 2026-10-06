@@ -2,15 +2,15 @@
 
 A live Swift application in one file, powered by ESW Live and Roost (the renamed Peregrine framework). Save it, let Swift compile, and see the new version in your browser.
 
-**[v0.1.0-alpha.2](https://github.com/roost-framework/roost-playground/releases/tag/v0.1.0-alpha.2) is an alpha preview** for **macOS 14+ and Swift 6.3+**. It builds against published ESW 1.5, Roost 2.0, and Nexus 2.0.
+**[v0.1.0-alpha.3](https://github.com/roost-framework/roost-playground/releases/tag/v0.1.0-alpha.3) is an alpha preview** for **macOS 14+ and Swift 6.3+**. It builds against published ESW 1.5, Roost 2.0, and Nexus 2.0.
 
 ## Quick start
 
 Install the command with [Mint](https://github.com/yonaskolb/Mint), fetch the counter example, and run it:
 
 ```sh
-mint install roost-framework/roost-playground@v0.1.0-alpha.2
-curl -O https://raw.githubusercontent.com/roost-framework/roost-playground/v0.1.0-alpha.2/Examples/Counter.swift
+mint install roost-framework/roost-playground@v0.1.0-alpha.3
+curl -O https://raw.githubusercontent.com/roost-framework/roost-playground/v0.1.0-alpha.3/Examples/Counter.swift
 roost-playground Counter.swift
 ```
 
@@ -145,7 +145,7 @@ See [validation notes](docs/validation.md) for the exercised behaviors and curre
 
 An installed command compiles previews against the release named by `playgroundVersion` in `Sources/PlaygroundCore/Workspace.swift`. Before tagging:
 
-1. Set `playgroundVersion` to the new version, without the `v` prefix (for example `0.1.0-alpha.3`).
+1. Set `playgroundVersion` to the new version, without the `v` prefix (for example `0.1.0-alpha.4`).
 2. Update the version in this README's Mint and `curl` commands.
-3. Commit, tag with the `v` prefix (`v0.1.0-alpha.3`), and push the tag.
+3. Commit, tag with the `v` prefix (`v0.1.0-alpha.4`), and push the tag.
 4. Run `mint install roost-framework/roost-playground@<tag>` and build a preview outside any clone.
