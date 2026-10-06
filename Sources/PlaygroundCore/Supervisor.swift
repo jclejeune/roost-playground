@@ -18,6 +18,7 @@ public final class Supervisor {
         let process: ManagedProcess
         let executable: URL
         let address: String
+        let token: String
     }
 
     public init(configuration: Configuration) throws {
@@ -114,6 +115,11 @@ public final class Supervisor {
             environment["ROOST_PORT"] = String(port)
             environment["ROOST_PLAYGROUND_TOKEN"] = token
             environment["ROOST_PLAYGROUND_ID"] = workspace.root.lastPathComponent
+            if let state = await currentState(of: worker) {
+                let file = executable.deletingLastPathComponent().appending(path: "state.json")
+                try state.write(to: file)
+                environment["ROOST_PLAYGROUND_STATE"] = file.path
+            }
             let workerLog = workspace.logs.appending(path: "preview-\(token).log")
             status.logPath = workerLog.path
             let process: ManagedProcess
@@ -125,7 +131,7 @@ public final class Supervisor {
                 try? FileManager.default.removeItem(at: executable.deletingLastPathComponent())
                 throw error
             }
-            let next = Worker(process: process, executable: executable, address: "http://127.0.0.1:\(port)")
+            let next = Worker(process: process, executable: executable, address: "http://127.0.0.1:\(port)", token: token)
             candidate = next
             try await waitUntilHealthy(next, token: token)
             try Task.checkCancellation()
@@ -222,6 +228,19 @@ public final class Supervisor {
     private func retire(_ worker: Worker) async {
         await worker.process.stop()
         try? FileManager.default.removeItem(at: worker.executable.deletingLastPathComponent())
+    }
+
+    /// The active preview's latest state, so the next version can continue from it.
+    // ponytail: events in the second between this read and the swap are lost.
+    private func currentState(of worker: Worker?) async -> Data? {
+        guard let worker, worker.process.isRunning else { return nil }
+        var request = URLRequest(url: URL(string: worker.address + "/__playground/state")!)
+        request.setValue(worker.token, forHTTPHeaderField: "X-Playground-Token")
+        request.timeoutInterval = 1
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return data
     }
 
     private func waitUntilHealthy(_ worker: Worker, token: String) async throws {

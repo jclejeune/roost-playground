@@ -15,7 +15,10 @@ await mkdir(artifacts, { recursive: true });
 await mkdir(fixtures, { recursive: true });
 await rm(join(fixtures, 'Views'), { recursive: true, force: true });
 const source = join(fixtures, 'Counter "quoted".swift');
-const original = await readFile(join(root, 'Examples/Counter.swift'), 'utf8');
+const example = await readFile(join(root, 'Examples/Counter.swift'), 'utf8');
+// Most checks expect a reload to reset state, which still holds for states that are not Codable.
+const original = example.replace('struct State: Codable, Sendable', 'struct State: Sendable');
+assert.notEqual(original, example, 'The counter example keeps a Codable state');
 await writeFile(source, original);
 execFileSync(join(root, 'scripts/check.sh'), ['build', '--product', 'roost-playground'], { stdio: 'inherit' });
 const binPath = execFileSync(join(root, 'scripts/check.sh'), ['bin-path'], { encoding: 'utf8' }).trim();
@@ -240,7 +243,7 @@ try {
     current = await readyAfter(2);
     await connected(current);
     await frame.getByRole('heading', { name: 'Saved template.' }).waitFor();
-    await count(0);
+    await count(1);
     await save(template.replace('{count}', '{missingValue}'), templateFile);
     const templateError = await phase('failed');
     assert.equal(templateError.generation, 3);
@@ -255,6 +258,32 @@ try {
     await frame.getByRole('heading', { name: 'A template, alive.' }).waitFor();
     assert.equal(current.cacheHit, true, 'Recreating the original template reuses its successful build');
     console.log('PASS: HEEx plugin, template-only rebuild, diagnostic mapping, deletion and recreation');
+
+    await save(example);
+    current = await readyAfter(current.generation);
+    await connected(current);
+    await frame.getByRole('button', { name: 'Increase', exact: true }).click();
+    await frame.getByRole('button', { name: 'Increase', exact: true }).click();
+    await count(2);
+    await frame.getByLabel('Your name').fill('Ada');
+    await frame.getByRole('button', { name: 'Say hello' }).click();
+    await poll(async () => await frame.locator('#greeting').textContent() === 'Hello, Ada!', 'greeting before reload', 10_000);
+    await save(example.replaceAll('A little Swift, live.', 'Kept state.'));
+    current = await readyAfter(current.generation);
+    await connected(current);
+    await frame.getByRole('heading', { name: 'Kept state.' }).waitFor();
+    await count(2);
+    assert.equal(await frame.locator('#greeting').textContent(), 'Hello, Ada!');
+    await page.reload();
+    await connected(current);
+    await count(0);
+    await frame.getByRole('button', { name: 'Increase', exact: true }).click();
+    await count(1);
+    await save(example.replace('var count = 0', 'var count = 0\n        var clicks = 0'));
+    current = await readyAfter(current.generation);
+    await connected(current);
+    await count(0);
+    console.log('PASS: Codable state survives a code reload, a page reload resets it, and a new shape starts fresh');
   }
 
   // A compiler may finish an obsolete A while B is on disk, then the editor undoes back to A.

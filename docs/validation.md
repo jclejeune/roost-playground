@@ -4,18 +4,19 @@ Environment: macOS, Swift 6.4 (Xcode 27.2 beta toolchain), Swift 6 language mode
 
 ## Automated checks
 
-`./scripts/check.sh test` covers argument errors and relative input resolution, content fingerprints with unchanged timestamps, template removal, nested paths, distinct cache identities, escaped Swift literals, incremental writes, lock exclusion, bounded process output, exit status, and process-group cleanup.
+`./scripts/check.sh test` covers argument errors, `new` file creation, relative input resolution, build-progress parsing, one-builder-at-a-time locking for the shared preview package, README/version consistency, content fingerprints with unchanged timestamps, template removal, nested paths, distinct cache identities, escaped Swift literals, incremental writes, lock exclusion, bounded process output, exit status, and process-group cleanup.
 
 Session-cache tests cover independent executable/resource copies, least-recently-used eviction, missing or incomplete artifacts, stale-session cleanup, and hashes that change with local source/resource contents or dependency resolution, even when timestamps stay unchanged.
 
-The runtime tests also exercise its private Roost adapter: session ownership, cross-site and CSRF rejection, event validation, duplicate-event replay, stale revisions, revocation, and bundled browser assets. These are the original ESW integration contracts adapted to the renamed framework.
+The runtime tests also exercise carried state (a `Codable` state travels to the next process until a browser connects; other or reshaped states start fresh) and its private Roost adapter: session ownership, cross-site and CSRF rejection, event validation, duplicate-event replay, stale revisions, revocation, and bundled browser assets. These are the original ESW integration contracts adapted to the renamed framework.
 
 `npm --prefix BrowserTests test` exercises the actual generated Swift package, Roost worker, ESW JavaScript bundle, and browser shell. Its acceptance assertions cover:
 
 - Counter and form events, isolated session cookies, Host rejection, narrow-screen layout, duplicate-runner rejection.
 - Compilation failure with the original quoted source path and continued interaction with the previous preview.
 - Macro-expansion errors appear before dependency warnings and contain readable text without terminal escape codes.
-- Atomic saves, successful reload with fresh state, stable parent page, and retirement of the old worker.
+- Atomic saves, successful reload with fresh state for a non-`Codable` state, stable parent page, and retirement of the old worker.
+- A `Codable` state (count and form text) survives a code reload; a browser reload resets it; a changed state shape starts fresh.
 - Edits during compilation, failed candidate startup, deleted/recreated sources, and recovery after a worker crash.
 - SIGINT, workspace-lock release, restarting in the same browser tab, and an initially invalid file.
 - File-based HEEx rendering, template-only changes, template diagnostics, deletion/recreation, and SIGTERM cleanup.

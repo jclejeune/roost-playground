@@ -57,7 +57,7 @@ struct Counter: LivePlayground {
 }
 ```
 
-`LivePlayground` is an ordinary ESW `LiveView` with `init()` and an application entry point. It supplies the Roost server, session middleware, page layout, and ESW live client. Set `static let title` to change the page title. State and event handling remain Swift; rendering uses the same `#live` macro as a full application.
+`LivePlayground` is an ordinary ESW `LiveView` with `init()` and an application entry point. It supplies the Roost server, session middleware, page layout, and ESW live client. Set `static let title` to change the page title. State and event handling remain Swift; rendering uses the same `#live` macro as a full application. Make the state `Codable`, as the counter's `Int` already is, to keep it across code reloads.
 
 SwiftFormat sees the template as a string and may remove parameters referenced only inside it. Keep the `unusedArguments` guard above `render` when using format-on-save.
 
@@ -95,7 +95,7 @@ The theme is adapted from Roost's `examples/Roost/Public/css/app.css`, with its 
 - Reuse requires identical Swift and template contents, local package sources/resources, manifests, and dependency resolutions. A similar file is not a match. Dependency changes are checked on the next source/template edit; restart the runner after changing the toolchain.
 - The candidate must start, answer its readiness token, and render successfully before replacing the active page. A stale build is discarded when a newer edit exists.
 - Compile errors and startup failures preserve the previous page and its live state. Diagnostics refer to the original source and template paths.
-- **Successful code reloads reset live state**, including cached versions. Each reload starts a fresh application process.
+- Each successful reload starts a fresh application process. **A `Codable` state carries over** from the previous version, including cached ones, so the counter keeps its value while you edit. Reloading the browser page, or changing the state's shape, starts fresh. States that are not `Codable` reset on every reload.
 - A preview crash is reported. Save another edit to start a new version.
 
 The shell and worker bind to loopback. Each preview runs on its own port inside the shell's iframe, and playground sessions use a cookie specific to that input. The browser polls a read-only status endpoint; editing happens in your editor.

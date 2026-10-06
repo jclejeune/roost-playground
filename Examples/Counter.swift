@@ -4,7 +4,7 @@ import RoostPlayground
 struct Counter: LivePlayground {
     static let title = "A little Swift, live."
 
-    struct State: Sendable {
+    struct State: Codable, Sendable {
         var count = 0
         var name = ""
         var greeting = "Your next interaction runs in Swift."
