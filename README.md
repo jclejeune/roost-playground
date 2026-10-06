@@ -2,7 +2,7 @@
 
 A live Swift application in one file, powered by ESW Live and Roost (the renamed Peregrine framework). Save it, let Swift compile, and see the new version in your browser.
 
-**v0.1.0-alpha.1 is a development preview.** It requires the sibling ESW Live, Roost, and Nexus development checkouts described below. At release time, the required ESW Live changes are not yet published; the public ESW checkout alone cannot build this preview.
+**This is a development preview.** It builds against published ESW 1.5, Roost 2.0, and Nexus 2.0.
 
 ```sh
 ./playground Examples/Counter.swift
@@ -49,19 +49,16 @@ The fuller [counter example](Examples/Counter.swift) includes form submission. T
 
 Optional `.heex` and `.esw` files in the input's sibling `Views/` directory are compiled with `ESWBuildPlugin`. Nested directories work; adding, editing, deleting, or recreating a template triggers a rebuild.
 
-## Local setup
+## Install
 
-This first version targets **macOS 14+ and Swift 6.3+**. It consumes the current local ESW Live and Roost development code, so keep these checkouts as siblings:
+This first version targets **macOS 14+ and Swift 6.3+**. Clone this repository and run `./playground`, or install the command with [Mint](https://github.com/yonaskolb/Mint):
 
-```text
-swift-projects/
-├── esw/                     # Includes the ESWLive product
-├── Nexus/
-├── Peregrine/               # Current checkout folder; exports the Roost library
-└── roost-playground/
+```sh
+mint install Maartz/roost-playground@v0.1.0-alpha.2
+roost-playground Counter.swift    # with ~/.mint/bin on your PATH
 ```
 
-The launcher generates the example's Swift package for you. Its first run resolves dependencies and compiles both the runner and preview. Later runs reuse their build caches. This is currently a local development project; the manifests have not been converted to published ESW Live releases. A private adapter in `Sources/RoostPlayground/` connects ESW Live to Roost; this keeps the playground independent of the older `ESWLivePeregrine` integration during the framework rename.
+The launcher generates the example's Swift package for you. Its first run resolves dependencies and compiles both the runner and preview. Later runs reuse their build caches. A checkout compiles previews against its own `RoostPlayground` sources; an installed command fetches the release tag it was built from. A private adapter in `Sources/RoostPlayground/` connects ESW Live to Roost; this keeps the playground independent of the older `ESWLivePeregrine` integration during the framework rename.
 
 ```sh
 ./playground /path/to/Counter.swift --port 4568 --no-open
@@ -112,7 +109,9 @@ This keeps signed bundles outside File Provider-managed source folders such as s
 
 Set `ROOST_PLAYGROUND_CACHE` to relocate the cache. Keep it outside synced folders. `ROOST_PLAYGROUND_ROOT` locates this checkout when invoking a compiled CLI directly; the launcher sets it automatically.
 
-SwiftPM currently emits upstream package-identity warnings for the local ESW/Nexus overrides and the two SwiftSyntax repository URLs. The adjacent projects need coordinated dependency changes before replacing this local-checkout setup with distribution packaging.
+To develop ESW, Nexus, Roost, and Spectro alongside the playground, set `ROOST_ECOSYSTEM_PATH` to the folder holding their `esw/`, `Nexus/`, `Peregrine/`, and `Spectro/` checkouts. Roost reads the same variable, so every package uses the same local copies.
+
+SwiftPM currently warns that ESW and Spectro reach SwiftSyntax through two repository URLs (`swiftlang/` and `apple/`). This needs a coordinated change upstream.
 
 ## Checks
 

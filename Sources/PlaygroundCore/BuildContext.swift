@@ -9,9 +9,11 @@ struct BuildContext {
 
     static func capture(configuration: Configuration, workspace: Workspace) throws -> Self {
         let manager = FileManager.default
-        let parent = configuration.packageRoot.deletingLastPathComponent()
-        // These are the local dependencies of the generated package and RoostPlayground.
-        let packages = [configuration.packageRoot] + ["esw", "Peregrine", "Nexus"].map { parent.appending(path: $0) }
+        // Local packages the preview can compile from. Remote dependencies are covered by Package.resolved.
+        let ecosystem = configuration.ecosystemRoot.map { root in
+            ["esw", "Peregrine", "Nexus", "Spectro"].map { root.appending(path: $0) }
+        }
+        let packages = [configuration.packageRoot] + (ecosystem ?? [])
         var hasher = SHA256()
         for package in packages {
             for name in ["Package.swift", "Package.resolved"] {

@@ -1,5 +1,5 @@
 {
-  "originHash" : "af2b16b56d052e8d181464178e1eb698a4c850f4f6a5ff07a4c72624692dca02",
+  "originHash" : "01b5aba871022c81280a507a0e7caae02c4eb1dfe6db8439600e0b8ec06fa89d",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -47,6 +47,15 @@
       }
     },
     {
+      "identity" : "esw",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Spectro-ORM/ESW.git",
+      "state" : {
+        "revision" : "8ff401e6efdf20cfc52d27cbfaf0fd0686e38337",
+        "version" : "1.5.0"
+      }
+    },
+    {
       "identity" : "filecheck",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/llvm-swift/FileCheck.git",
@@ -80,6 +89,15 @@
       "state" : {
         "revision" : "3498e60218e6003894ff95192d756e238c01f44e",
         "version" : "4.7.1"
+      }
+    },
+    {
+      "identity" : "nexus",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Spectro-ORM/Nexus.git",
+      "state" : {
+        "revision" : "1fc010e02ac912ceca1c31a3304fca115117fc89",
+        "version" : "2.0.0"
       }
     },
     {
@@ -332,6 +350,15 @@
       "state" : {
         "revision" : "0c0290ff6b24942dadb83a929ffaaa1481df04a2",
         "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "swift-roost",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Maartz/swift-roost.git",
+      "state" : {
+        "revision" : "1dde36ad3da7b131034489e6cf6198320cc99654",
+        "version" : "2.0.0"
       }
     },
     {

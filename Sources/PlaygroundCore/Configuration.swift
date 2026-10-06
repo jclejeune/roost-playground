@@ -9,12 +9,14 @@ public struct Configuration: Sendable {
     public let source: URL
     public let packageRoot: URL
     public let cacheRoot: URL
+    public let ecosystemRoot: URL?
     public let port: Int
     public let opensBrowser: Bool
     public var views: URL { source.deletingLastPathComponent().appending(path: "Views") }
     public var address: String { "http://127.0.0.1:\(port)" }
 
-    public init(arguments: [String], currentDirectory: URL, packageRoot: URL, cacheRoot: URL? = nil) throws {
+    public init(arguments: [String], currentDirectory: URL, packageRoot: URL, cacheRoot: URL? = nil,
+                ecosystemRoot: URL? = nil) throws {
         var input: String?
         var port = 4567
         var opensBrowser = true
@@ -49,6 +51,7 @@ public struct Configuration: Sendable {
         self.packageRoot = packageRoot.standardizedFileURL.resolvingSymlinksInPath()
         self.cacheRoot = cacheRoot ?? FileManager.default.homeDirectoryForCurrentUser
             .appending(path: "Library/Caches/roost-playground/\(digest(self.packageRoot.path).prefix(16))")
+        self.ecosystemRoot = ecosystemRoot
         self.port = port
         self.opensBrowser = opensBrowser
     }

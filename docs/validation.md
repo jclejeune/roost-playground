@@ -64,6 +64,6 @@ SwiftPM also synchronized the lockfile with the neighboring Roost manifest's exi
 
 ## Limits
 
-This is a local macOS first version with sibling-checkout dependencies. It watches the selected Swift file and template directory; edits to dependency repositories or additional Swift files are outside the watch set. There is no browser editor, arbitrary package dependency UI, state migration, Linux validation, or remote execution service. The first cold build includes the framework dependency graph; later edits compile incrementally.
+This is a macOS first version. It watches the selected Swift file and template directory; edits to dependency repositories or additional Swift files are outside the watch set. There is no browser editor, arbitrary package dependency UI, state migration, Linux validation, or remote execution service. The first cold build includes the framework dependency graph; later edits compile incrementally.
 
-Upstream SwiftPM identity warnings remain visible. No neighboring repository was changed to suppress them.
+SwiftPM still warns that ESW and Spectro reach SwiftSyntax through two repository URLs. No upstream repository was changed to suppress it.

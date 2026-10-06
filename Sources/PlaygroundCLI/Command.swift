@@ -32,7 +32,8 @@ struct Command {
         let configuration = try Configuration(arguments: arguments,
                                               currentDirectory: URL(filePath: FileManager.default.currentDirectoryPath),
                                               packageRoot: packageRoot,
-                                              cacheRoot: environment["ROOST_PLAYGROUND_CACHE"].map { URL(filePath: $0) })
+                                              cacheRoot: environment["ROOST_PLAYGROUND_CACHE"].map { URL(filePath: $0) },
+                                              ecosystemRoot: environment["ROOST_ECOSYSTEM_PATH"].map { URL(filePath: $0) })
         let supervisor = try Supervisor(configuration: configuration)
         let router = Router()
         var assets = [

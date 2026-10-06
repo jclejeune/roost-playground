@@ -22,6 +22,9 @@ public final class WorkspaceLock {
     }
 }
 
+/// The release tag an installed binary compiles previews against. Bump it with each tag.
+let playgroundVersion = "0.1.0-alpha.2"
+
 public struct Workspace: Sendable {
     public let configuration: Configuration
     public let root: URL
@@ -44,8 +47,12 @@ public struct Workspace: Sendable {
         let views = target.appending(path: "Views")
         try manager.createDirectory(at: target, withIntermediateDirectories: true)
         try manager.createDirectory(at: logs, withIntermediateDirectories: true)
-        let dependency = configuration.packageRoot
-        let esw = dependency.deletingLastPathComponent().appending(path: "esw")
+        // A checkout compiles previews against its own sources; an installed binary fetches its release.
+        let library = FileManager.default.fileExists(atPath: configuration.packageRoot.appending(path: "Package.swift").path)
+            ? ".package(name: \"roost-playground\", path: \(String(reflecting: configuration.packageRoot.path)))"
+            : ".package(url: \"https://github.com/Maartz/roost-playground.git\", exact: \"\(playgroundVersion)\")"
+        let esw = configuration.ecosystemRoot.map { ".package(path: \(String(reflecting: $0.appending(path: "esw").path)))" }
+            ?? ".package(url: \"https://github.com/Spectro-ORM/ESW.git\", from: \"1.5.0\")"
         let manifest = """
         // swift-tools-version: 6.3
         import PackageDescription
@@ -54,13 +61,13 @@ public struct Workspace: Sendable {
             platforms: [.macOS(.v14)],
             products: [.executable(name: "PlaygroundPage", targets: ["PlaygroundPage"])],
             dependencies: [
-                .package(path: \(String(reflecting: dependency.path))),
-                .package(path: \(String(reflecting: esw.path)))
+                \(library),
+                \(esw)
             ],
             targets: [
                 .executableTarget(
                     name: "PlaygroundPage",
-                    dependencies: [.product(name: "RoostPlayground", package: \(String(reflecting: dependency.lastPathComponent.lowercased())))],
+                    dependencies: [.product(name: "RoostPlayground", package: "roost-playground")],
                     plugins: [.plugin(name: "ESWBuildPlugin", package: "esw")]
                 )
             ],

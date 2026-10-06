@@ -69,7 +69,12 @@ struct WorkspaceTests {
         #expect(try generated.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate == before)
         let manifest = try String(contentsOf: workspace.root.appending(path: "Package.swift"), encoding: .utf8)
         #expect(manifest.contains("ESWBuildPlugin"))
-        #expect(manifest.contains(String(reflecting: fixture.configuration.packageRoot.path)))
+        #expect(manifest.contains("roost-playground.git\", exact: \"\(playgroundVersion)\""))
+        #expect(manifest.contains("ESW.git"))
+        try "".write(to: fixture.root.appending(path: "Package.swift"), atomically: true, encoding: .utf8)
+        try workspace.prepare(snapshot: snapshot)
+        let checkout = try String(contentsOf: workspace.root.appending(path: "Package.swift"), encoding: .utf8)
+        #expect(checkout.contains(String(reflecting: fixture.configuration.packageRoot.path)))
         let escapedPath = String(String(reflecting: fixture.configuration.source.path).dropFirst().dropLast())
         let diagnostic = "\(escapedPath):2:1: error: broken"
         #expect(workspace.mapDiagnostics(diagnostic) == "\(fixture.configuration.source.path):2:1: error: broken")
