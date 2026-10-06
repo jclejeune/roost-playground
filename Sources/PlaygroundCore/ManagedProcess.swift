@@ -84,10 +84,15 @@ public final class ManagedProcess {
 
     public func stop() async {
         // Signal the group even if its leader exited; it may have left descendants behind.
-        guard kill(-pid, SIGTERM) == 0 else { _ = exitCode; return }
+        // macOS can briefly refuse (EPERM) a group whose child is still starting; only ESRCH means gone.
+        for _ in 0..<20 {
+            if kill(-pid, SIGTERM) == 0 { break }
+            guard errno == EPERM else { _ = exitCode; return }
+            await cleanupDelay()
+        }
         for _ in 0..<20 {
             _ = exitCode
-            if kill(-pid, 0) != 0 { return }
+            if kill(-pid, 0) != 0 && errno == ESRCH { return }
             await cleanupDelay()
         }
         kill(-pid, SIGKILL)
