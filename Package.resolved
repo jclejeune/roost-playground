@@ -1,5 +1,5 @@
 {
-  "originHash" : "04d719b6e64f5626f1949e3d164dba4332b11596ce917f9338c995649a5f3737",
+  "originHash" : "16d7d5952091790cd884df11241217208b0e08a430a9982cacfcabba9b0fe17c",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/roost-framework/ESW.git",
       "state" : {
-        "revision" : "8ff401e6efdf20cfc52d27cbfaf0fd0686e38337",
-        "version" : "1.5.0"
+        "revision" : "79f640d7832a2a8e3b7de867c38f7957f59d016f",
+        "version" : "1.6.0"
       }
     },
     {

@@ -60,7 +60,7 @@ p { margin: 0 0 1rem; }
 .skip-link { position: absolute; top: -60px; left: 12px; padding: 8px 16px; background: var(--surface); z-index: 1; }
 .skip-link:focus { top: 12px; }
 
-/* Default layout for single-file views and the HEEx example. */
+/* Default layout for single-file views and the HESW example. */
 [data-esw-live] main { width: min(1000px, calc(100% - 80px)); margin: 64px auto 90px; }
 [data-esw-live] h2 { font-size: 1.35rem; font-weight: 600; margin: 0 0 1.25rem; }
 [data-esw-live] section { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 28px; }

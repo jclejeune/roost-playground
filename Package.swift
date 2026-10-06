@@ -18,7 +18,7 @@ let package = Package(
         .executable(name: "roost-playground", targets: ["PlaygroundCLI"]),
     ],
     dependencies: [
-        dependency("esw", folder: "esw", url: "https://github.com/roost-framework/ESW.git", from: "1.5.0"),
+        dependency("esw", folder: "esw", url: "https://github.com/roost-framework/ESW.git", from: "1.6.0"),
         dependency("swift-roost", folder: "Peregrine", url: "https://github.com/roost-framework/swift-roost.git", from: "2.0.1"),
         dependency("nexus", folder: "Nexus", url: "https://github.com/roost-framework/Nexus.git", from: "2.0.0"),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),

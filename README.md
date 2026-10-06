@@ -63,13 +63,13 @@ struct Counter: LivePlayground {
 
 SwiftFormat sees the template as a string and may remove parameters referenced only inside it. Keep the `unusedArguments` guard above `render` when using format-on-save.
 
-The fuller [counter example](Examples/Counter.swift) includes form submission. The [template example](Examples/Templated/Counter.swift) uses a separate `.live.heex` file. From a clone:
+The fuller [counter example](Examples/Counter.swift) includes form submission. The [template example](Examples/Templated/Counter.swift) uses a separate `.live.hesw` file. From a clone:
 
 ```sh
 ./playground Examples/Templated/Counter.swift
 ```
 
-Optional `.heex` and `.esw` files in the input's sibling `Views/` directory are compiled with `ESWBuildPlugin`. Nested directories work; adding, editing, deleting, or recreating a template triggers a rebuild.
+Optional `.hesw` and `.esw` files in the input's sibling `Views/` directory are compiled with `ESWBuildPlugin`. Nested directories work; adding, editing, deleting, or recreating a template triggers a rebuild.
 
 ## Options
 

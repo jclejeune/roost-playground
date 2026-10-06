@@ -229,8 +229,8 @@ try {
     console.log('PASS: clean SIGINT, lock release, initially broken file, and recovery in the same tab');
 
     const templateSource = await readFile(join(root, 'Examples/Templated/Counter.swift'), 'utf8');
-    const templateFile = join(fixtures, 'Views/counter.live.heex');
-    const template = await readFile(join(root, 'Examples/Templated/Views/counter.live.heex'), 'utf8');
+    const templateFile = join(fixtures, 'Views/counter.live.hesw');
+    const template = await readFile(join(root, 'Examples/Templated/Views/counter.live.hesw'), 'utf8');
     await mkdir(dirname(templateFile), { recursive: true });
     await writeFile(templateFile, template);
     await save(templateSource);
@@ -257,7 +257,7 @@ try {
     await connected(current);
     await frame.getByRole('heading', { name: 'A template, alive.' }).waitFor();
     assert.equal(current.cacheHit, true, 'Recreating the original template reuses its successful build');
-    console.log('PASS: HEEx plugin, template-only rebuild, diagnostic mapping, deletion and recreation');
+    console.log('PASS: HESW plugin, template-only rebuild, diagnostic mapping, deletion and recreation');
 
     await save(example);
     current = await readyAfter(current.generation);

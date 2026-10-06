@@ -23,7 +23,7 @@ public struct SourceSnapshot: Sendable {
             for case let relative as String in files {
                 guard !relative.split(separator: "/").contains(where: { $0.hasPrefix(".") }) else { continue }
                 let file = configuration.views.appending(path: relative)
-                guard ["esw", "heex"].contains(file.pathExtension) else { continue }
+                guard ["esw", "hesw", "heex"].contains(file.pathExtension) else { continue }
                 let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                 guard values.isRegularFile == true, values.isSymbolicLink != true else { continue }
                 templates[relative] = try String(contentsOf: file, encoding: .utf8)
