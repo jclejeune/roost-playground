@@ -2,7 +2,7 @@
 
 A live Swift application in one file, powered by ESW Live and Roost (the renamed Peregrine framework). Save it, let Swift compile, and see the new version in your browser.
 
-**[Roost Playground 1.0](https://github.com/roost-framework/roost-playground/releases/tag/v1.0.0)** runs on **macOS 14+ with Swift 6.3+**. It builds against published ESW 1.5, Roost 2.0, and Nexus 2.0.
+**[Roost Playground 1.0](https://github.com/roost-framework/roost-playground/releases/tag/v1.0.0)** runs on **macOS 14+ with Swift 6.3+**. It builds against published ESW 1.6, Roost 2.0, and Nexus 2.0.
 
 ## Quick start
 

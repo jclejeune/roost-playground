@@ -81,7 +81,7 @@ public struct Workspace: Sendable {
             ? ".package(name: \"roost-playground\", path: \(String(reflecting: configuration.packageRoot.path)))"
             : ".package(url: \"https://github.com/roost-framework/roost-playground.git\", exact: \"\(playgroundVersion)\")"
         let esw = configuration.ecosystemRoot.map { ".package(path: \(String(reflecting: $0.appending(path: "esw").path)))" }
-            ?? ".package(url: \"https://github.com/roost-framework/ESW.git\", from: \"1.5.0\")"
+            ?? ".package(url: \"https://github.com/roost-framework/ESW.git\", from: \"1.6.0\")"
         let manifest = """
         // swift-tools-version: 6.3
         import PackageDescription
