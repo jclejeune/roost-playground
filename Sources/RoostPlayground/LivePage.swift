@@ -41,44 +41,64 @@ struct PlaygroundLivePage<View: LiveView>: Sendable {
         return conn.html(layout(fragment)).putRespHeader(.cacheControl, "private, no-store")
     }
 
+    /// The page's asset, stream, and event routes, served by ``LiveController``.
     @RouteBuilder var routes: [Route] {
-        GET("\(path)/assets/:name") { conn in
-            guard let name = conn.params["name"], let source = LiveAssets.javascript(named: name) else {
-                return conn.respond(status: .notFound, body: .empty)
+        scope(path, plugs: [assignment]) {
+            GET("/assets/:name", LiveController<View>.self, .asset)
+            GET("/:id/stream", LiveController<View>.self, .stream)
+            POST("/:id/event", LiveController<View>.self, .event)
+        }
+    }
+
+    /// Puts this page in the request for the controller actions that serve it.
+    var assignment: Plug {
+        { conn in conn.assign(LivePageKey<View>.self, value: self) }
+    }
+
+    /// The page a request was routed through by ``assignment``.
+    static func current(_ conn: Connection) throws -> Self {
+        guard let page = conn[LivePageKey<View>.self] else { throw LiveError.notFound }
+        return page
+    }
+
+    func asset(_ conn: Connection) -> Connection {
+        guard let name = conn.params["name"], let source = LiveAssets.javascript(named: name) else {
+            return conn.respond(status: .notFound, body: .empty)
+        }
+        return conn.respond(status: .ok, body: .string(source))
+            .putRespHeader(.contentType, "text/javascript; charset=utf-8")
+            .putRespHeader(.cacheControl, "no-cache")
+    }
+
+    func stream(_ conn: Connection) async -> Connection {
+        do {
+            try await authorize(conn)
+            try checkFetchOrigin(conn)
+            let updates = try await host.subscribe(conn.params["id"] ?? "", owner: owner(conn))
+            return conn.sseEvent { writer in
+                let packets = livePackets(updates)
+                defer { packets.cancel() }
+                for await packet in packets.stream { try await writer.write(packet) }
             }
-            return conn.respond(status: .ok, body: .string(source))
-                .putRespHeader(.contentType, "text/javascript; charset=utf-8")
-                .putRespHeader(.cacheControl, "no-cache")
-        }
-        GET("\(path)/:id/stream") { conn in
-            do {
-                try await authorize(conn)
-                try checkFetchOrigin(conn)
-                let updates = try await host.subscribe(conn.params["id"] ?? "", owner: owner(conn))
-                return conn.sseEvent { writer in
-                    let packets = livePackets(updates)
-                    defer { packets.cancel() }
-                    for await packet in packets.stream { try await writer.write(packet) }
-                }
-            } catch LiveError.notFound, LiveError.closed {
-                // EventSource stops reconnecting on 204.
-                return conn.respond(status: .noContent, body: .empty)
-            } catch { return failure(error, conn: conn) }
-        }
-        POST("\(path)/:id/event") { conn in
-            do {
-                try await authorize(conn)
-                try checkFetchOrigin(conn)
-                let checked = try await csrfProtection()(conn)
-                guard !checked.isHalted else { return failure(LiveError.unauthorized, conn: conn) }
-                guard conn.getReqHeader(.contentType)?.lowercased().hasPrefix("application/json") == true,
-                      case .buffered(let data) = conn.requestBody, data.count <= 65_536,
-                      let event = try? JSONDecoder().decode(LiveEvent.self, from: data),
-                      let revision = event.baseRevision, revision >= 0 else { throw LiveError.invalidEvent }
-                let update = try await host.handle(conn.params["id"] ?? "", owner: owner(conn), event: event)
-                return try conn.json(value: update).putRespHeader(.cacheControl, "no-store")
-            } catch { return failure(error, conn: conn) }
-        }
+        } catch LiveError.notFound, LiveError.closed {
+            // EventSource stops reconnecting on 204.
+            return conn.respond(status: .noContent, body: .empty)
+        } catch { return failure(error, conn: conn) }
+    }
+
+    func event(_ conn: Connection) async -> Connection {
+        do {
+            try await authorize(conn)
+            try checkFetchOrigin(conn)
+            let checked = try await csrfProtection()(conn)
+            guard !checked.isHalted else { return failure(LiveError.unauthorized, conn: conn) }
+            guard conn.getReqHeader(.contentType)?.lowercased().hasPrefix("application/json") == true,
+                  case .buffered(let data) = conn.requestBody, data.count <= 65_536,
+                  let event = try? JSONDecoder().decode(LiveEvent.self, from: data),
+                  let revision = event.baseRevision, revision >= 0 else { throw LiveError.invalidEvent }
+            let update = try await host.handle(conn.params["id"] ?? "", owner: owner(conn), event: event)
+            return try conn.json(value: update).putRespHeader(.cacheControl, "no-store")
+        } catch { return failure(error, conn: conn) }
     }
 
     /// Revoke open instances as part of logout or a permission change.
@@ -110,5 +130,37 @@ struct PlaygroundLivePage<View: LiveView>: Sendable {
         return conn.respond(status: status, body: .string("{\"error\":\"\(code)\"}"))
             .putRespHeader(.contentType, "application/json")
             .putRespHeader(.cacheControl, "no-store")
+    }
+}
+
+enum LivePageKey<View: LiveView>: AssignKey {
+    typealias Value = PlaygroundLivePage<View>
+}
+
+/// Serves a live page's client script, update stream, and events. The page
+/// itself comes from the request, put there by its routes' scope.
+struct LiveController<View: LiveView>: Controller {
+    enum Action: String, ControllerAction {
+        case asset, stream, event
+    }
+
+    static func action(_ action: Action) -> Plug {
+        switch action {
+        case .asset: asset
+        case .stream: stream
+        case .event: event
+        }
+    }
+
+    static func asset(_ conn: Connection) async throws -> Connection {
+        try PlaygroundLivePage<View>.current(conn).asset(conn)
+    }
+
+    static func stream(_ conn: Connection) async throws -> Connection {
+        try await PlaygroundLivePage<View>.current(conn).stream(conn)
+    }
+
+    static func event(_ conn: Connection) async throws -> Connection {
+        try await PlaygroundLivePage<View>.current(conn).event(conn)
     }
 }

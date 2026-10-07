@@ -44,7 +44,10 @@ private struct PlaygroundApplication<Page: LivePlayground>: RoostApp {
 
     var plugs: [Plug] {
         let identity = ProcessInfo.processInfo.environment["ROOST_PLAYGROUND_ID"] ?? String(server.port)
-        return [session(store: store, cookieName: "_roost_playground_" + identity)] + browserPlugs()
+        let context = PlaygroundContext(live: live, preserved: preserved, token: token)
+        return [session(store: store, cookieName: "_roost_playground_" + identity)] + browserPlugs() + [
+            { conn in conn.assign(PlaygroundContextKey<Page>.self, value: context) },
+        ]
     }
     var server: ServerConfig {
         // A playground always listens on loopback, including when the surrounding shell has a production host set.
@@ -52,19 +55,61 @@ private struct PlaygroundApplication<Page: LivePlayground>: RoostApp {
     }
 
     var routes: [Route] {
-        GET("/") { conn in try await live.render(conn, layout: Self.layout) }
+        GET("/", PlaygroundController<Page>.self, .page)
         live.routes
-        GET("/__playground/health") { conn in
-            try conn.json(value: ["token": token]).putRespHeader(.cacheControl, "no-store")
+        GET("/__playground/health", PlaygroundController<Page>.self, .health)
+        GET("/__playground/state", PlaygroundController<Page>.self, .state)
+    }
+}
+
+/// What the playground's own actions need from the running application.
+private struct PlaygroundContext<Page: LivePlayground>: Sendable {
+    let live: PlaygroundLivePage<PreservingView<Page>>
+    let preserved: PreservedState<Page.State>
+    let token: String
+}
+
+private enum PlaygroundContextKey<Page: LivePlayground>: AssignKey {
+    typealias Value = PlaygroundContext<Page>
+}
+
+/// The playground page and the supervisor's health and state checks.
+private struct PlaygroundController<Page: LivePlayground>: Controller {
+    enum Action: String, ControllerAction {
+        case page, health, state
+    }
+
+    static func action(_ action: Action) -> Plug {
+        switch action {
+        case .page: page
+        case .health: health
+        case .state: state
         }
-        GET("/__playground/state") { conn in
-            // Only the supervisor knows this process's token.
-            guard !token.isEmpty, conn.getReqHeader("X-Playground-Token") == token,
-                  let data = preserved.encodedLatest() else { return conn.respond(status: .noContent, body: .empty) }
-            return conn.respond(status: .ok, body: .buffered(data))
-                .putRespHeader(.contentType, "application/json")
-                .putRespHeader(.cacheControl, "no-store")
+    }
+
+    static func page(_ conn: Connection) async throws -> Connection {
+        try await context(conn).live.render(conn, layout: layout)
+    }
+
+    static func health(_ conn: Connection) async throws -> Connection {
+        try conn.json(value: ["token": context(conn).token]).putRespHeader(.cacheControl, "no-store")
+    }
+
+    static func state(_ conn: Connection) async throws -> Connection {
+        let context = try context(conn)
+        // Only the supervisor knows this process's token.
+        guard !context.token.isEmpty, conn.getReqHeader("X-Playground-Token") == context.token,
+              let data = context.preserved.encodedLatest() else { return conn.respond(status: .noContent, body: .empty) }
+        return conn.respond(status: .ok, body: .buffered(data))
+            .putRespHeader(.contentType, "application/json")
+            .putRespHeader(.cacheControl, "no-store")
+    }
+
+    private static func context(_ conn: Connection) throws -> PlaygroundContext<Page> {
+        guard let context = conn[PlaygroundContextKey<Page>.self] else {
+            throw NexusHTTPError(.internalServerError, message: "The playground context is missing")
         }
+        return context
     }
 
     private static func layout(_ html: String) -> String {

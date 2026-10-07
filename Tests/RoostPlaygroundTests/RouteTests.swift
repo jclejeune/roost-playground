@@ -19,19 +19,43 @@ private struct RouteApp: RoostApp {
     var sessionStore: SessionStore? { store }
     // Deliberately omit browserPlugs: the live adapter must enforce CSRF itself.
     @RouteBuilder var routes: [Route] {
-        GET("/") { conn in try await live.render(conn) }
+        scope("/", plugs: [live.assignment]) {
+            GET("/", RouteController.self, .page)
+            // The in-process helper cannot consume writer-based SSE responses.
+            // Connect the state here; BrowserTests exercises the real SSE socket.
+            GET("/connect/:id", RouteController.self, .connect)
+            POST("/invalidate", RouteController.self, .invalidate)
+        }
         live.routes
-        // The in-process helper cannot consume writer-based SSE responses.
-        // Connect the state here; BrowserTests exercises the real SSE socket.
-        GET("/connect/:id") { conn in
-            guard let owner = conn.getSession(PlaygroundLivePage<RouteCounter>.ownerKey) else { throw LiveError.unauthorized }
-            var updates = try await live.host.subscribe(conn.params["id"] ?? "", owner: owner).makeAsyncIterator()
-            return try conn.json(value: await updates.next())
+    }
+}
+
+private struct RouteController: Controller {
+    enum Action: String, ControllerAction { case page, connect, invalidate }
+
+    static func action(_ action: Action) -> Plug {
+        switch action {
+        case .page: page
+        case .connect: connect
+        case .invalidate: invalidate
         }
-        POST("/invalidate") { conn in
-            await live.invalidate(conn)
-            return conn.respond(status: .noContent, body: .empty)
-        }
+    }
+
+    static func page(_ conn: Connection) async throws -> Connection {
+        try await PlaygroundLivePage<RouteCounter>.current(conn).render(conn)
+    }
+
+    static func connect(_ conn: Connection) async throws -> Connection {
+        let live = try PlaygroundLivePage<RouteCounter>.current(conn)
+        guard let owner = conn.getSession(PlaygroundLivePage<RouteCounter>.ownerKey) else { throw LiveError.unauthorized }
+        var updates = try await live.host.subscribe(conn.params["id"] ?? "", owner: owner).makeAsyncIterator()
+        return try conn.json(value: await updates.next())
+    }
+
+    static func invalidate(_ conn: Connection) async throws -> Connection {
+        let live = try PlaygroundLivePage<RouteCounter>.current(conn)
+        await live.invalidate(conn)
+        return conn.respond(status: .noContent, body: .empty)
     }
 }
 
