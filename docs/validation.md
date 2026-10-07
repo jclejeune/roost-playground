@@ -74,6 +74,13 @@ SwiftPM also synchronized the lockfile with the neighboring Roost manifest's exi
 - The tag workflow checks `playgroundVersion`, installs the tag with Mint on macOS 26 with Xcode's toolchain, and builds a starter outside any checkout.
 - On macOS 15 with the swift.org 6.3.3 toolchain, Mint's release build of the command stopped at launch: `Symbol not found: _$sScfsE25isIsolatingCurrentContextSbSgyF` in `/usr/lib/swift/libswift_Concurrency.dylib`. The same toolchain's debug builds, which the clone launcher uses, pass the whole acceptance suite there.
 
+## Release 1.0.1, 2026-10-07
+
+- A cold preview cache measured 1.9 GB: 1.3 GB of compiled dependencies and 615 MB of dependency clones and checkouts. Building without debug info (`-gnone`) only saved about 100 MB, so previews keep it.
+- Installed copies now share one cache folder. A playground started from a clone removed a stale cache folder and kept its own; `roost-playground clean` then removed the remaining cache and reported 2.68 GB freed.
+- Unit tests cover the cache location for installed copies and clones, pruning (deleted clones and unmarked caches go; the current, shared installed, live-clone, and locked caches stay), and `clean` skipping a locked cache.
+- The browser acceptance suite passed locally.
+
 ## Limits
 
 Installing with Mint needs macOS 26 or later; on macOS 14 and 15, run from a clone (see the release 1.0.0 notes above).
