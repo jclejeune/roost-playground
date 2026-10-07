@@ -1,5 +1,5 @@
 {
-  "originHash" : "063d91357ef90387d8faf809a6a1e49c8587ddb2203323cf604b2d9f1064eb30",
+  "originHash" : "7142e8b50ff676b504e037dcfbcf4f196e926058a7580878e7c9f40d894307a7",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/roost-framework/ESW.git",
       "state" : {
-        "revision" : "79f640d7832a2a8e3b7de867c38f7957f59d016f",
-        "version" : "1.6.0"
+        "revision" : "996c14b48c3d8074d7b15fa31004df95ca2dd6fe",
+        "version" : "1.7.0"
       }
     },
     {
@@ -83,24 +83,6 @@
       }
     },
     {
-      "identity" : "noora",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tuist/Noora",
-      "state" : {
-        "revision" : "d4294a287ee193a7e1ca9a54c98be26fcb1d7187",
-        "version" : "0.57.1"
-      }
-    },
-    {
-      "identity" : "path",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tuist/path",
-      "state" : {
-        "revision" : "7c74ac435e03a927c3a73134c48b61e60221abcb",
-        "version" : "0.3.8"
-      }
-    },
-    {
       "identity" : "postgres-kit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/postgres-kit.git",
@@ -119,21 +101,12 @@
       }
     },
     {
-      "identity" : "rainbow",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/onevcat/Rainbow",
-      "state" : {
-        "revision" : "711ca908ca19d16e577d575c8d0a48151a16bb1b",
-        "version" : "4.2.2"
-      }
-    },
-    {
       "identity" : "spectro",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/roost-framework/Spectro.git",
       "state" : {
-        "revision" : "70c2a1c48551eece8a1fcf0ada053379d6389c03",
-        "version" : "2.2.0"
+        "revision" : "c3b6ff9417ab7702b9d938d0490297785094c3a0",
+        "version" : "2.3.0"
       }
     },
     {
@@ -330,8 +303,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/roost-framework/swift-roost.git",
       "state" : {
-        "revision" : "dc94d087ee522e8fe6e7b1a793a9f13ccdc13cd8",
-        "version" : "2.1.1"
+        "revision" : "262912d73295c31588ea07e006c1855d1aa5b195",
+        "version" : "2.1.2"
       }
     },
     {

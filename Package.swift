@@ -20,7 +20,7 @@ let package = Package(
     ],
     dependencies: [
         dependency("esw", folder: "esw", url: "https://github.com/roost-framework/ESW.git", from: "1.6.0"),
-        dependency("swift-roost", folder: "Peregrine", url: "https://github.com/roost-framework/swift-roost.git", from: "2.1.1"),
+        dependency("swift-roost", folder: "Peregrine", url: "https://github.com/roost-framework/swift-roost.git", from: "2.1.2"),
         // The playground doesn't use Nexus's Vapor adapter; neither does Roost.
         dependency("nexus", folder: "Nexus", url: "https://github.com/roost-framework/Nexus.git", from: "2.1.0", traits: []),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
