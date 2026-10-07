@@ -81,6 +81,12 @@ SwiftPM also synchronized the lockfile with the neighboring Roost manifest's exi
 - Unit tests cover the cache location for installed copies and clones, pruning (deleted clones and unmarked caches go; the current, shared installed, live-clone, and locked caches stay), and `clean` skipping a locked cache.
 - The browser acceptance suite passed locally.
 
+## Release 1.0.2, 2026-10-07
+
+- Nexus 2.1.0 and Spectro 2.2.0 put their optional dependencies behind default package traits, and Roost 2.1.1 turns off Nexus's `Vapor` trait. The playground requires Roost 2.1.1 and also turns off Nexus's defaults on its direct dependency. A fresh resolve fetches 43 packages and 542 MB of sources instead of 49 and 730 MB; Vapor, routing-kit, multipart-kit, console-kit, and websocket-kit are gone. Spectro keeps its defaults in Roost because `roost spectro` runs the app's own `spectro` command.
+- SwiftPM refused to re-resolve a preview package left by 1.0.1 (Nexus 2.0.0 pinned and checked out): "Disabled default traits … on package 'nexus' … that declares no traits." The runner now drops the shared package's pins, workspace state, and checkouts once when a build fails before "Building for", then retries. Over a real 1.0.1 cache, the preview re-resolved to Roost 2.1.1 and Nexus 2.1.0 and rendered (148 s for that first build).
+- Clones with old checkouts resolve normally with the committed `Package.resolved`.
+
 ## Limits
 
 Installing with Mint needs macOS 26 or later; on macOS 14 and 15, run from a clone (see the release 1.0.0 notes above).
