@@ -16,6 +16,12 @@ public struct Configuration: Sendable {
     public let createsSource: Bool
     public var views: URL { source.deletingLastPathComponent().appending(path: "Views") }
     public var address: String { "http://127.0.0.1:\(port)" }
+    /// A clone compiles previews against its own sources; an installed copy fetches its release.
+    public var isCheckout: Bool { Self.isCheckout(packageRoot) }
+
+    static func isCheckout(_ packageRoot: URL) -> Bool {
+        FileManager.default.fileExists(atPath: packageRoot.appending(path: "Package.swift").path)
+    }
 
     public init(arguments: [String], currentDirectory: URL, packageRoot: URL, cacheRoot: URL? = nil,
                 ecosystemRoot: URL? = nil) throws {
@@ -60,8 +66,8 @@ public struct Configuration: Sendable {
         }
         self.source = source
         self.packageRoot = packageRoot.standardizedFileURL.resolvingSymlinksInPath()
-        self.cacheRoot = cacheRoot ?? FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: "Library/Caches/roost-playground/\(digest(self.packageRoot.path).prefix(16))")
+        self.cacheRoot = cacheRoot ?? Caches.base.appending(path: Self.isCheckout(self.packageRoot)
+            ? String(digest(self.packageRoot.path).prefix(16)) : Caches.installed)
         self.ecosystemRoot = ecosystemRoot
         self.port = port
         self.opensBrowser = opensBrowser

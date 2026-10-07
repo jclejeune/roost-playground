@@ -5,7 +5,7 @@ public final class WorkspaceLock {
     private var descriptor: Int32
 
     /// Nil when another process holds the lock.
-    fileprivate init?(url: URL) throws {
+    init?(url: URL) throws {
         let acquired = open(url.path, O_CREAT | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR)
         guard acquired >= 0 else { throw PlaygroundError("Cannot open workspace lock: \(url.path)") }
         guard flock(acquired, LOCK_EX | LOCK_NB) == 0 else {
@@ -53,6 +53,7 @@ public struct Workspace: Sendable {
         guard let lock = try WorkspaceLock(url: root.appending(path: "playground.lock")) else {
             throw PlaygroundError("This file already has a running playground. Stop it before starting another.")
         }
+        Caches.claim(configuration.cacheRoot, for: configuration.packageRoot)
         // Earlier versions generated a package per input; its build products are now unused.
         for legacy in [".build", "Sources", "Package.swift", "Package.resolved"] {
             try? manager.removeItem(at: root.appending(path: legacy))
@@ -77,7 +78,7 @@ public struct Workspace: Sendable {
         try manager.createDirectory(at: target, withIntermediateDirectories: true)
         try manager.createDirectory(at: logs, withIntermediateDirectories: true)
         // A checkout compiles previews against its own sources; an installed binary fetches its release.
-        let library = FileManager.default.fileExists(atPath: configuration.packageRoot.appending(path: "Package.swift").path)
+        let library = configuration.isCheckout
             ? ".package(name: \"roost-playground\", path: \(String(reflecting: configuration.packageRoot.path)))"
             : ".package(url: \"https://github.com/roost-framework/roost-playground.git\", exact: \"\(playgroundVersion)\")"
         let esw = configuration.ecosystemRoot.map { ".package(path: \(String(reflecting: $0.appending(path: "esw").path)))" }

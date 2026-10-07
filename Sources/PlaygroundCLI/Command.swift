@@ -20,13 +20,23 @@ struct Command {
             Roost Playground
             Usage: playground <file.swift> [--port 4567] [--no-open]
                    playground new <file.swift> [--port 4567] [--no-open]
+                   playground clean
 
             `new` writes a starter playground to the file, then runs it.
+            `clean` removes build caches that no running playground uses.
 
             Save the Swift file or a template in its sibling Views directory to rebuild.
             Failed builds keep the last working preview. Successful reloads reset live state.
             Press Ctrl-C to stop the playground and its preview processes.
             """)
+            return
+        }
+        if arguments == ["clean"] {
+            let result = Caches.clean()
+            let bytes = result.removed.reduce(0) { $0 + $1.bytes }
+            print("Removed \(result.removed.count) cache\(result.removed.count == 1 ? "" : "s") from \(Caches.base.path), "
+                + "freeing \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)).")
+            for root in result.inUse { print("Kept \(root.path): a playground is running from it.") }
             return
         }
         let environment = ProcessInfo.processInfo.environment
@@ -42,6 +52,9 @@ struct Command {
             print("Created \(configuration.source.path)")
         }
         let supervisor = try Supervisor(configuration: configuration)
+        Task.detached(priority: .background) {
+            for root in Caches.prune(keeping: configuration.cacheRoot) { print("Removed unused cache \(root.path)") }
+        }
         let router = Router()
         var assets = [
             (path: "/roost.css", type: "text/css; charset=utf-8", body: Data(PlaygroundTheme.stylesheet.utf8)),

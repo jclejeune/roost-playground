@@ -75,8 +75,11 @@ Optional `.hesw` and `.esw` files in the input's sibling `Views/` directory are 
 
 ```sh
 roost-playground /path/to/Counter.swift --port 4568 --no-open
+roost-playground clean
 roost-playground --help
 ```
+
+`clean` deletes every build cache that no running playground uses and reports the space freed. The next preview compiles its dependencies again.
 
 From a clone, use `./playground` in place of `roost-playground`. Use `--port` for another browser-shell port and `--no-open` to print the address without opening a browser. Paths containing spaces or quotes are supported. **Ctrl-C** stops the runner, compiler subprocesses, and preview servers. A second runner for the same input is rejected; different inputs can use different shell ports.
 
@@ -104,10 +107,10 @@ The shell and worker bind to loopback. Each preview runs on its own port inside 
 
 ## Build artifacts
 
-All SwiftPM build products live under:
+All SwiftPM build products live under `~/Library/Caches/roost-playground/`, in one folder for every installed version and one per clone, named after its path:
 
 ```text
-~/Library/Caches/roost-playground/<id>/
+~/Library/Caches/roost-playground/<installed or clone-id>/
 ├── runner/                  # CLI build (clone launcher only)
 └── previews/
     ├── package/             # Generated package shared by every input
@@ -118,13 +121,15 @@ All SwiftPM build products live under:
         └── versions/<hash>/ # Up to eight successful builds for this session
 ```
 
-Every input file builds in the same generated package, so dependencies compile once: after the first preview, opening another file takes seconds. Runners for different files take turns building.
+Every input file builds in the same generated package, so dependencies compile once: after the first preview, opening another file takes seconds. Runners for different files take turns building. A cold cache takes about 2 GB, mostly compiled dependencies.
+
+Upgrading an installed copy reuses its folder, so only changed dependencies compile again. When a playground starts, it deletes the caches of deleted clones and of versions before 1.0.1, unless a playground is running from them. Run `roost-playground clean` to delete the rest.
 
 This keeps signed bundles outside File Provider-managed source folders such as synced `Documents`. Each running preview owns a copy of its executable and resource bundles, so another build cannot change its loaded resources.
 
 **Ctrl-C and SIGTERM remove the saved-version cache** after stopping the preview processes and removing their staged copies. SwiftPM's dependency/incremental cache and logs remain for later launches. A forced kill cannot run cleanup; the next runner removes leftover saved versions after acquiring the input's lock. Saved versions are never reused across runner sessions.
 
-Set `ROOST_PLAYGROUND_CACHE` to relocate the cache. Keep it outside synced folders.
+Set `ROOST_PLAYGROUND_CACHE` to relocate the cache. Keep it outside synced folders. Caches elsewhere are not cleaned automatically or by `clean`.
 
 ## Development
 
