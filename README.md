@@ -59,7 +59,7 @@ struct Counter: LivePlayground {
 }
 ```
 
-`LivePlayground` is an ordinary ESW `LiveView` with `init()` and an application entry point. It supplies the Roost server, session middleware, page layout, and ESW live client. Set `static let title` to change the page title. State and event handling remain Swift; rendering uses the same `#live` macro as a full application. Make the state `Codable`, as the counter's `Int` already is, to keep it across code reloads.
+`LivePlayground` is an ordinary ESW `Interactive` view with `init()` and an application entry point. It supplies the Roost server, session middleware, page layout, and ESW live client. Set `static let title` to change the page title. State and event handling remain Swift; rendering uses the same `#live` macro as a full application. Make the state `Codable`, as the counter's `Int` already is, to keep it across code reloads.
 
 SwiftFormat sees the template as a string and may remove parameters referenced only inside it. Keep the `unusedArguments` guard above `render` when using format-on-save.
 

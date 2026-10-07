@@ -2,7 +2,7 @@
 import RoostTest
 import Testing
 
-private struct RouteCounter: LiveView {
+private struct RouteCounter: Interactive {
     func mount(_ context: LiveContext) async throws -> Int { context.isConnected ? 10 : 0 }
     func handleEvent(_ event: LiveEvent, state: Int) async throws -> Int {
         guard event.name == "increment" else { throw LiveError.invalidEvent }

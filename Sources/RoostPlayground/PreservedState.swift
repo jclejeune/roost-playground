@@ -36,7 +36,7 @@ final class PreservedState<State: Sendable>: @unchecked Sendable {
 }
 
 /// A playground whose first mount may continue from carried state.
-struct PreservingView<Page: LivePlayground>: LiveView {
+struct PreservingView<Page: LivePlayground>: Interactive {
     let page: Page
     let preserved: PreservedState<Page.State>
 

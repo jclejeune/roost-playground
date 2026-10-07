@@ -6,7 +6,7 @@ import PlaygroundTheme
 
 /// A regular ESW live view with a standalone development entry point.
 /// Add `@main` to your conforming type and run `playground YourFile.swift`.
-public protocol LivePlayground: LiveView {
+public protocol LivePlayground: Interactive {
     init()
     static var title: String { get }
     static func main() async throws

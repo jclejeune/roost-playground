@@ -6,7 +6,7 @@ import Nexus
 
 /// A live route uses the application's server-side session middleware.
 /// `authorize` runs on the initial page and every stream/event request.
-struct PlaygroundLivePage<View: LiveView>: Sendable {
+struct PlaygroundLivePage<View: Interactive>: Sendable {
     let host: LiveHost<View>
     let path: String
     private let authorize: @Sendable (Connection) async throws -> Void
@@ -133,13 +133,13 @@ struct PlaygroundLivePage<View: LiveView>: Sendable {
     }
 }
 
-enum LivePageKey<View: LiveView>: AssignKey {
+enum LivePageKey<View: Interactive>: AssignKey {
     typealias Value = PlaygroundLivePage<View>
 }
 
 /// Serves a live page's client script, update stream, and events. The page
 /// itself comes from the request, put there by its routes' scope.
-struct LiveController<View: LiveView>: Controller {
+struct LiveController<View: Interactive>: Controller {
     enum Action: String, ControllerAction {
         case asset, stream, event
     }
