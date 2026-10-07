@@ -71,6 +71,15 @@ public struct Workspace: Sendable {
         }
     }
 
+    /// Drops SwiftPM's pins, workspace state, and checkouts for the shared package, keeping its
+    /// repository cache and compiled products, so the next build resolves dependencies afresh.
+    public func resetResolution() {
+        for path in [package.appending(path: "Package.resolved"), scratch.appending(path: "workspace-state.json"),
+                     scratch.appending(path: "checkouts")] {
+            try? FileManager.default.removeItem(at: path)
+        }
+    }
+
     public func prepare(snapshot: SourceSnapshot) throws {
         let manager = FileManager.default
         let target = package.appending(path: "Sources/PlaygroundPage")

@@ -107,6 +107,22 @@ struct WorkspaceTests {
         withExtendedLifetime(replacement) {}
     }
 
+    @Test func resettingResolutionKeepsRepositoriesAndBuildProducts() throws {
+        let fixture = try Fixture(); defer { fixture.clean() }
+        let workspace = Workspace(configuration: fixture.configuration)
+        let manager = FileManager.default
+        for directory in ["checkouts/nexus", "repositories/nexus", "out/Products"] {
+            try manager.createDirectory(at: workspace.scratch.appending(path: directory), withIntermediateDirectories: true)
+        }
+        for file in [workspace.package.appending(path: "Package.resolved"), workspace.scratch.appending(path: "workspace-state.json")] {
+            try "{}".write(to: file, atomically: true, encoding: .utf8)
+        }
+        workspace.resetResolution()
+        for gone in ["checkouts", "workspace-state.json"] { #expect(!manager.fileExists(atPath: workspace.scratch.appending(path: gone).path)) }
+        #expect(!manager.fileExists(atPath: workspace.package.appending(path: "Package.resolved").path))
+        for kept in ["repositories/nexus", "out/Products"] { #expect(manager.fileExists(atPath: workspace.scratch.appending(path: kept).path)) }
+    }
+
     @MainActor @Test func sharedPackageAdmitsOneBuilderAtATime() async throws {
         let fixture = try Fixture(); defer { fixture.clean() }
         let workspace = Workspace(configuration: fixture.configuration)

@@ -5,9 +5,10 @@ import PackageDescription
 // Set ROOST_ECOSYSTEM_PATH to a folder containing esw/, Nexus/, Peregrine/, and Spectro/
 // to develop them together. Roost reads the same variable, so all packages agree on one copy.
 let ecosystem = ProcessInfo.processInfo.environment["ROOST_ECOSYSTEM_PATH"]
-func dependency(_ name: String, folder: String, url: String, from version: Version) -> Package.Dependency {
-    if let ecosystem { return .package(name: name, path: "\(ecosystem)/\(folder)") }
-    return .package(url: url, from: version)
+func dependency(_ name: String, folder: String, url: String, from version: Version,
+                traits: Set<Package.Dependency.Trait> = [.defaults]) -> Package.Dependency {
+    if let ecosystem { return .package(name: name, path: "\(ecosystem)/\(folder)", traits: traits) }
+    return .package(url: url, from: version, traits: traits)
 }
 
 let package = Package(
@@ -19,8 +20,9 @@ let package = Package(
     ],
     dependencies: [
         dependency("esw", folder: "esw", url: "https://github.com/roost-framework/ESW.git", from: "1.6.0"),
-        dependency("swift-roost", folder: "Peregrine", url: "https://github.com/roost-framework/swift-roost.git", from: "2.0.1"),
-        dependency("nexus", folder: "Nexus", url: "https://github.com/roost-framework/Nexus.git", from: "2.0.0"),
+        dependency("swift-roost", folder: "Peregrine", url: "https://github.com/roost-framework/swift-roost.git", from: "2.1.1"),
+        // The playground doesn't use Nexus's Vapor adapter; neither does Roost.
+        dependency("nexus", folder: "Nexus", url: "https://github.com/roost-framework/Nexus.git", from: "2.1.0", traits: []),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
     ],
     targets: [

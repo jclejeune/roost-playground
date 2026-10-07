@@ -176,20 +176,13 @@ public final class Supervisor {
         let arguments = ["build", "--package-path", workspace.package.path, "--scratch-path", workspace.scratch.path]
         let log = workspace.logs.appending(path: "build.log")
         status.logPath = log.path
-        let compiler = try ManagedProcess(executable: URL(filePath: "/usr/bin/env"),
-                                          arguments: ["swift"] + arguments + ["--product", "PlaygroundPage"],
-                                          directory: workspace.package, log: log)
-        build = compiler
-        let watcher = Task { [weak self] in
-            while !Task.isCancelled {
-                self?.status.progress = CompilerDiagnostics.progress(compiler.diagnostics(limit: 4_096))
-                try? await Task.sleep(for: .milliseconds(300))
-            }
+        var (compiler, code) = try await runCompiler(arguments, log: log)
+        // An upgrade can leave pins and checkouts that SwiftPM refuses to re-resolve. A failure
+        // before "Building for" is dependency resolution, not the user's code, so resolve afresh once.
+        if code != 0, (try? String(contentsOf: log, encoding: .utf8))?.contains("Building for") == false {
+            workspace.resetResolution()
+            (compiler, code) = try await runCompiler(arguments, log: log)
         }
-        defer { watcher.cancel(); status.progress = nil }
-        let code = try await compiler.wait()
-        await compiler.stop()
-        build = nil
         try Task.checkCancellation()
         guard try isCurrent(snapshot) else { return nil }
         guard code == 0 else {
@@ -212,6 +205,23 @@ public final class Supervisor {
             binaryDirectory = URL(filePath: path)
         }
         return binaryDirectory
+    }
+
+    private func runCompiler(_ arguments: [String], log: URL) async throws -> (ManagedProcess, Int32) {
+        let compiler = try ManagedProcess(executable: URL(filePath: "/usr/bin/env"),
+                                          arguments: ["swift"] + arguments + ["--product", "PlaygroundPage"],
+                                          directory: workspace.package, log: log)
+        build = compiler
+        let watcher = Task { [weak self] in
+            while !Task.isCancelled {
+                self?.status.progress = CompilerDiagnostics.progress(compiler.diagnostics(limit: 4_096))
+                try? await Task.sleep(for: .milliseconds(300))
+            }
+        }
+        defer { watcher.cancel(); status.progress = nil; build = nil }
+        let code = try await compiler.wait()
+        await compiler.stop()
+        return (compiler, code)
     }
 
     private func isCurrent(_ snapshot: SourceSnapshot) throws -> Bool {
