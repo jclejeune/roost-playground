@@ -9,7 +9,7 @@ A live Swift application in one file, powered by ESW Live and Roost (the renamed
 Install the command with [Mint](https://github.com/yonaskolb/Mint), then create and run a starter file:
 
 ```sh
-mint install roost-framework/roost-playground@v1.0.3
+mint install roost-framework/roost-playground@v1.0.4
 roost-playground new Counter.swift
 ```
 
@@ -121,7 +121,7 @@ All SwiftPM build products live under `~/Library/Caches/roost-playground/`, in o
         └── versions/<hash>/ # Up to eight successful builds for this session
 ```
 
-Every input file builds in the same generated package, so dependencies compile once: after the first preview, opening another file takes seconds. Runners for different files take turns building. A cold cache takes about 1.8 GB, mostly compiled dependencies. The playground turns off Nexus's `Vapor` package trait, as Roost does, so SwiftPM never downloads Vapor.
+Every input file builds in the same generated package, so dependencies compile once: after the first preview, opening another file takes seconds. Runners for different files take turns building. A cold cache takes about 1.8 GB, mostly compiled dependencies. The playground turns off Nexus's `Vapor` package trait, as Roost does, so SwiftPM never downloads Vapor; through Roost, Spectro's command builds without Noora.
 
 Upgrading an installed copy reuses its folder, so only changed dependencies compile again. If SwiftPM cannot re-resolve the dependencies an earlier version left behind, the playground drops their pins and checkouts once and resolves afresh, so that first build takes longer. When a playground starts, it deletes the caches of deleted clones and of versions before 1.0.1, unless a playground is running from them. Run `roost-playground clean` to delete the rest.
 
@@ -156,7 +156,7 @@ GitHub Actions runs both on every push to `main`. See [validation notes](docs/va
 
 An installed command compiles previews against the release named by `playgroundVersion` in `Sources/PlaygroundCore/Workspace.swift`. Before tagging:
 
-1. Set `playgroundVersion` to the new version, without the `v` prefix (for example `1.0.4`).
+1. Set `playgroundVersion` to the new version, without the `v` prefix (for example `1.0.5`).
 2. Update the version in this README's Mint command.
-3. Commit, tag with the `v` prefix (`v1.0.4`), and push the tag.
+3. Commit, tag with the `v` prefix (`v1.0.5`), and push the tag.
 4. CI checks that the tag matches `playgroundVersion`, installs the tag with Mint, and builds a starter outside any clone ([`scripts/smoke.sh`](scripts/smoke.sh)). Publish the GitHub release once it passes.

@@ -93,6 +93,11 @@ SwiftPM also synchronized the lockfile with the neighboring Roost manifest's exi
 - SwiftPM refused to re-resolve a preview package left by 1.0.1 (Nexus 2.0.0 pinned and checked out): "Disabled default traits … on package 'nexus' … that declares no traits." The runner now drops the shared package's pins, workspace state, and checkouts once when a build fails before "Building for", then retries. Over a real 1.0.1 cache, the preview re-resolved to Roost 2.1.1 and Nexus 2.1.0 and rendered (148 s for that first build).
 - Clones with old checkouts resolve normally with the committed `Package.resolved`.
 
+## Release 1.0.4, 2026-10-07
+
+- Spectro 2.3.0 puts Noora behind a `RichTerminal` trait, and Roost 2.1.2 enables only Spectro's `CLI` trait, so `roost spectro` builds the app's own spectro with plain-text output. With Roost 2.1.2, a fresh playground resolve fetches 40 packages and 453 MB of sources, down from 43 and 542 MB in 1.0.2; Noora is gone.
+- The runtime uses ESW 1.6's `Interactive` name, so the build has no deprecation warnings.
+
 ## Limits
 
 Installing with Mint needs macOS 26 or later; on macOS 14 and 15, run from a clone (see the release 1.0.0 notes above).
