@@ -55,8 +55,9 @@ public struct Workspace: Sendable {
         }
         Caches.claim(configuration.cacheRoot, for: configuration.packageRoot)
         // Earlier versions generated a package per input; its build products are now unused.
-        for legacy in [".build", "Sources", "Package.swift", "Package.resolved"] {
-            try? manager.removeItem(at: root.appending(path: legacy))
+        // A runner killed before cleanup leaves staged copies in runs; this lock proves it is gone.
+        for leftover in [".build", "Sources", "Package.swift", "Package.resolved", "runs"] {
+            try? manager.removeItem(at: root.appending(path: leftover))
         }
         return lock
     }

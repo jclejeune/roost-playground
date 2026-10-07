@@ -99,8 +99,11 @@ struct WorkspaceTests {
     @Test func workspaceLockExcludesAnotherWriter() throws {
         let fixture = try Fixture(); defer { fixture.clean() }
         let workspace = Workspace(configuration: fixture.configuration)
+        let leftover = workspace.root.appending(path: "runs/killed-runner")
+        try FileManager.default.createDirectory(at: leftover, withIntermediateDirectories: true)
         var lock: WorkspaceLock? = try workspace.acquire()
         #expect(lock != nil)
+        #expect(!FileManager.default.fileExists(atPath: leftover.path), "A new runner removes a killed runner's staged copies")
         #expect(throws: (any Error).self) { try workspace.acquire() }
         lock = nil
         let replacement = try workspace.acquire()

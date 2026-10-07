@@ -127,7 +127,7 @@ Upgrading an installed copy reuses its folder, so only changed dependencies comp
 
 This keeps signed bundles outside File Provider-managed source folders such as synced `Documents`. Each running preview owns a copy of its executable and resource bundles, so another build cannot change its loaded resources.
 
-**Ctrl-C and SIGTERM remove the saved-version cache** after stopping the preview processes and removing their staged copies. SwiftPM's dependency/incremental cache and logs remain for later launches. A forced kill cannot run cleanup; the next runner removes leftover saved versions after acquiring the input's lock. Saved versions are never reused across runner sessions.
+**Ctrl-C and SIGTERM remove the saved-version cache** after stopping the preview processes and removing their staged copies. SwiftPM's dependency/incremental cache and logs remain for later launches. A forced kill cannot run cleanup; the next runner removes leftover saved versions and staged copies after acquiring the input's lock. Saved versions are never reused across runner sessions.
 
 Set `ROOST_PLAYGROUND_CACHE` to relocate the cache. Keep it outside synced folders. Caches elsewhere are not cleaned automatically or by `clean`.
 
