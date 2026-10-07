@@ -29,7 +29,7 @@ public final class WorkspaceLock {
 }
 
 /// The release tag an installed binary compiles previews against. Bump it with each tag.
-let playgroundVersion = "1.0.2"
+let playgroundVersion = "1.0.3"
 
 public struct Workspace: Sendable {
     public let configuration: Configuration

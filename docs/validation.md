@@ -81,6 +81,12 @@ SwiftPM also synchronized the lockfile with the neighboring Roost manifest's exi
 - Unit tests cover the cache location for installed copies and clones, pruning (deleted clones and unmarked caches go; the current, shared installed, live-clone, and locked caches stay), and `clean` skipping a locked cache.
 - The browser acceptance suite passed locally.
 
+## Release 1.0.3, 2026-10-07
+
+- The playground's routes go to Roost 2.1 controllers: `LiveController` serves a live page's client script, update stream, and events, and `PlaygroundController` serves the page and the supervisor's health and state checks. Request logs and traces name the action, such as `LiveController<…>.event`.
+- Controller actions are static, so their state travels in the request: a live page's routes assign the page in their scope, and the application assigns its live page, preserved state, and supervisor token in its plugs.
+- All 29 Swift tests passed, including the live-route contracts for session ownership, cross-site and CSRF rejection, event validation, replay, stale revisions, and revocation. Locally, 13 of 14 browser checkpoints passed. The cache checkpoint's final shutdown exceeded its 8 s limit under background CPU priority, and failed the same way on the unmodified 1.0.2 code.
+
 ## Release 1.0.2, 2026-10-07
 
 - Nexus 2.1.0 and Spectro 2.2.0 put their optional dependencies behind default package traits, and Roost 2.1.1 turns off Nexus's `Vapor` trait. The playground requires Roost 2.1.1 and also turns off Nexus's defaults on its direct dependency. A fresh resolve fetches 43 packages and 542 MB of sources instead of 49 and 730 MB; Vapor, routing-kit, multipart-kit, console-kit, and websocket-kit are gone. Spectro keeps its defaults in Roost because `roost spectro` runs the app's own `spectro` command.

@@ -9,7 +9,7 @@ A live Swift application in one file, powered by ESW Live and Roost (the renamed
 Install the command with [Mint](https://github.com/yonaskolb/Mint), then create and run a starter file:
 
 ```sh
-mint install roost-framework/roost-playground@v1.0.2
+mint install roost-framework/roost-playground@v1.0.3
 roost-playground new Counter.swift
 ```
 
@@ -156,7 +156,7 @@ GitHub Actions runs both on every push to `main`. See [validation notes](docs/va
 
 An installed command compiles previews against the release named by `playgroundVersion` in `Sources/PlaygroundCore/Workspace.swift`. Before tagging:
 
-1. Set `playgroundVersion` to the new version, without the `v` prefix (for example `1.0.3`).
+1. Set `playgroundVersion` to the new version, without the `v` prefix (for example `1.0.4`).
 2. Update the version in this README's Mint command.
-3. Commit, tag with the `v` prefix (`v1.0.3`), and push the tag.
+3. Commit, tag with the `v` prefix (`v1.0.4`), and push the tag.
 4. CI checks that the tag matches `playgroundVersion`, installs the tag with Mint, and builds a starter outside any clone ([`scripts/smoke.sh`](scripts/smoke.sh)). Publish the GitHub release once it passes.
